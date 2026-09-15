@@ -29,7 +29,7 @@ intuitionistically) are in `Countermodels.lean`.
 
 namespace IML
 
-open Pattern Crisp
+open Pattern
 
 -- ─────────────────────────────────────────────────────────────
 -- The core system
@@ -136,8 +136,7 @@ abbrev ProofAlt {Symbol : Type} (Γ : Set (Pattern Symbol)) (φ : Pattern Symbol
 section Equivalence
 variable {Symbol : Type} {Γ : Set (Pattern Symbol)}
 
-def Crisp.Proof.toCore :
-    ∀ {φ : Pattern Symbol}, Proof Γ φ → ProofCore (singletonAx Symbol) Γ φ
+def Proof.toCore : ∀ {φ : Pattern Symbol}, Proof Γ φ → ProofCore (singletonAx Symbol) Γ φ
   | _, .assumption h => .assumption h
   | _, .contractionOr => .contractionOr
   | _, .contractionAnd => .contractionAnd
@@ -353,22 +352,21 @@ end ProofCore
 -- ─────────────────────────────────────────────────────────────
 
 /-- Lift the free element variables of a context. -/
-def Crisp.AppCtx.lift {Symbol : Type} (k : Nat) : AppCtx Symbol → AppCtx Symbol
+def AppCtx.lift {Symbol : Type} (k : Nat) : AppCtx Symbol → AppCtx Symbol
   | .hole => .hole
-  | .left C ψ => .left (Crisp.AppCtx.lift k C) (evarLiftFrom k ψ)
-  | .right ψ C => .right (evarLiftFrom k ψ) (Crisp.AppCtx.lift k C)
+  | .left C ψ => .left (AppCtx.lift k C) (evarLiftFrom k ψ)
+  | .right ψ C => .right (evarLiftFrom k ψ) (AppCtx.lift k C)
 
-theorem Crisp.AppCtx.fill_lift {Symbol : Type} (k : Nat) (C : AppCtx Symbol)
-    (φ : Pattern Symbol) :
+theorem AppCtx.fill_lift {Symbol : Type} (k : Nat) (C : AppCtx Symbol) (φ : Pattern Symbol) :
     evarLiftFrom k (C.fill φ) = (C.lift k).fill (evarLiftFrom k φ) := by
   induction C with
   | hole => rfl
-  | left C ψ ih => simp only [AppCtx.fill, Crisp.AppCtx.lift, evarLiftFrom, ih]
-  | right ψ C ih => simp only [AppCtx.fill, Crisp.AppCtx.lift, evarLiftFrom, ih]
+  | left C ψ ih => simp only [AppCtx.fill, AppCtx.lift, evarLiftFrom, ih]
+  | right ψ C ih => simp only [AppCtx.fill, AppCtx.lift, evarLiftFrom, ih]
 
 theorem evarLift_ctxBot_impl_bot {Symbol : Type} (C : AppCtx Symbol) :
     evarLift (C.fill ⊥ₘ ⇒ ⊥ₘ) = ((C.lift 0).fill ⊥ₘ ⇒ ⊥ₘ) := by
-  simp only [evarLift, evarLiftFrom, Crisp.AppCtx.fill_lift]
+  simp only [evarLift, evarLiftFrom, AppCtx.fill_lift]
 
 -- ─────────────────────────────────────────────────────────────
 -- Derivability results

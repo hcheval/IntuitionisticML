@@ -16,10 +16,11 @@ This umbrella module collects the results of `IML/SingletonAlt/` and audits thei
 
 ## Results (all sorry-free)
 
-The semantic rows are over the crisp semantics `IML.Crisp` (evars as singletons); see the
-porting note in `Kernel.lean` for the `L`-valued-equality semantics of `IML.HeytingSemantics`.
-The proof-theoretic rows are semantics-independent, and the countermodels use their own
-generalized models (`GModel.lean`).
+The semantic rows are over the `L`-valued-equality semantics of `IML.HeytingSemantics` (the
+kernel lemma and `hvalid_singletonStrong` live in `IML.HeytingSoundness`, since the strong
+rule is the primitive of the proof system). The proof-theoretic rows are
+semantics-independent, and the countermodels use their own generalized models
+(`GModel.lean`).
 
 | Statement | Where | Method |
 |---|---|---|

@@ -7,6 +7,10 @@ Patterns are interpreted as L-valued predicates (Carrier → L) over an
 L-valued equality `E`; see `IML.HeytingSemantics`. SINGLETON is sound
 because every interpretation is extensional (`hinterp_ext`), and
 EXISTENCE because `E` is reflexive. No other rule touches `E`.
+
+The SINGLETON case goes through the *context kernel lemma* `hinterp_fill`:
+for every application context `C` there is a kernel `K_C : Carrier → Carrier → L`
+with `⟦C[X]⟧ m = ⨆ a, ⟦X⟧ a ⊓ K_C a m`.
 -/
 
 namespace IML
@@ -144,23 +148,103 @@ theorem hvalid_propagationOrRight {φ₁ φ₂ ψ : Pattern Symbol}
   exact sup_le_sup (le_iSup₂_of_le a b le_rfl) (le_iSup₂_of_le a b le_rfl)
 
 -- ─────────────────────────────────────────────────────────────
+-- The context kernel lemma
+-- ─────────────────────────────────────────────────────────────
+
+/-- The kernel of an application context: `K_C a m` measures "`a` at the hole
+of `C` yields `m`". For the empty context it is the model's equality `E a m`. -/
+def AppCtx.kernel (M : HModel Symbol L) (ρ : HValuation M) :
+    AppCtx Symbol → M.Carrier → M.Carrier → L
+  | .hole => fun a m => M.E a m
+  | .left C ψ => fun a m =>
+      ⨆ b, ⨆ c, AppCtx.kernel M ρ C a b ⊓ hinterp M ρ ψ c ⊓ M.appInterp b c m
+  | .right ψ C => fun a m =>
+      ⨆ b, ⨆ c, hinterp M ρ ψ b ⊓ AppCtx.kernel M ρ C a c ⊓ M.appInterp b c m
+
+/-- **The context kernel lemma**: `⟦C[X]⟧ m = ⨆ a, ⟦X⟧ a ⊓ K_C a m`. The hole
+case is extensionality of `⟦X⟧` (`hull_eq_of_ext`); the other cases are Frame
+distributivity. -/
+theorem hinterp_fill (C : AppCtx Symbol) (X : Pattern Symbol) (m : M.Carrier) :
+    hinterp M ρ (C.fill X) m = ⨆ a, hinterp M ρ X a ⊓ C.kernel M ρ a m := by
+  induction C generalizing m with
+  | hole =>
+    simp only [AppCtx.fill, AppCtx.kernel]
+    refine (congrFun (M.hull_eq_of_ext (hinterp_ext X ρ)) m).symm.trans ?_
+    exact iSup_congr fun a => inf_comm _ _
+  | left C ψ ih =>
+    simp only [AppCtx.fill, AppCtx.kernel, hinterp_app]
+    apply le_antisymm
+    · apply iSup_le; intro b; apply iSup_le; intro c
+      rw [ih b, iSup_inf_eq, iSup_inf_eq]
+      apply iSup_le; intro a
+      apply le_iSup_of_le a
+      rw [inf_iSup_eq]; apply le_iSup_of_le b
+      rw [inf_iSup_eq]; apply le_iSup_of_le c
+      exact le_of_eq (by simp only [inf_assoc])
+    · apply iSup_le; intro a
+      rw [inf_iSup_eq]; apply iSup_le; intro b
+      rw [inf_iSup_eq]; apply iSup_le; intro c
+      apply le_iSup_of_le b; apply le_iSup_of_le c
+      rw [ih b, iSup_inf_eq, iSup_inf_eq]
+      apply le_iSup_of_le a
+      exact le_of_eq (by simp only [inf_assoc])
+  | right ψ C ih =>
+    simp only [AppCtx.fill, AppCtx.kernel, hinterp_app]
+    apply le_antisymm
+    · apply iSup_le; intro b; apply iSup_le; intro c
+      rw [ih c, inf_iSup_eq, iSup_inf_eq]
+      apply iSup_le; intro a
+      apply le_iSup_of_le a
+      rw [inf_iSup_eq]; apply le_iSup_of_le b
+      rw [inf_iSup_eq]; apply le_iSup_of_le c
+      exact le_of_eq (by simp only [inf_assoc, inf_left_comm (hinterp M ρ ψ b)])
+    · apply iSup_le; intro a
+      rw [inf_iSup_eq]; apply iSup_le; intro b
+      rw [inf_iSup_eq]; apply iSup_le; intro c
+      apply le_iSup_of_le b; apply le_iSup_of_le c
+      rw [ih c, inf_iSup_eq, iSup_inf_eq]
+      apply le_iSup_of_le a
+      exact le_of_eq (by simp only [inf_assoc, inf_left_comm (hinterp M ρ ψ b)])
+
+/-- The bound `⟦C[X]⟧ m ≤ ⨆ a, ⟦X⟧ a`, a corollary of the kernel lemma. -/
+theorem fill_le_iSup (C : AppCtx Symbol) (X : Pattern Symbol) (m : M.Carrier) :
+    hinterp M ρ (C.fill X) m ≤ ⨆ a, hinterp M ρ X a := by
+  rw [hinterp_fill]; exact iSup_mono fun a => inf_le_left
+
+-- ─────────────────────────────────────────────────────────────
 -- Singleton
 -- ─────────────────────────────────────────────────────────────
 
-private theorem fill_le_iSup (C : AppCtx Symbol) (X : Pattern Symbol)
-    (m : M.Carrier) :
-    hinterp M ρ (C.fill X) m ≤ ⨆ a, hinterp M ρ X a := by
-  match C with
-  | .hole => exact le_iSup _ m
-  | .left C' ψ =>
-    simp only [AppCtx.fill, hinterp]
-    apply iSup_le; intro a; apply iSup_le; intro b
-    exact le_trans (le_trans inf_le_left inf_le_left) (fill_le_iSup C' X a)
-  | .right ψ C' =>
-    simp only [AppCtx.fill, hinterp]
-    apply iSup_le; intro a; apply iSup_le; intro b
-    exact le_trans (le_trans inf_le_left inf_le_right) (fill_le_iSup C' X b)
+/-- **The positive SINGLETON rule is sound**:
+`C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ (φ ⊓ ψ)]` holds in every `HModel`. By the
+kernel lemma the premise is a supremum over witnesses `a` (at the hole of
+`C₁`) and `b` (at the hole of `C₂`) of `E a x ⊓ φ a ⊓ K₁ a m ⊓ E b x ⊓ ψ b ⊓ K₂ b m`.
+Symmetry and transitivity give `E a x ⊓ E b x ≤ E a b`, and extensionality of
+`⟦φ⟧` transports `φ` from `a` to `b`, so `b` witnesses the conclusion. -/
+theorem hvalid_singletonStrong {C₁ C₂ : AppCtx Symbol} {n : EVarIndex}
+    {φ ψ : Pattern Symbol} (m : M.Carrier) :
+    hinterp M ρ (C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n ⊓ ψ) ⇒
+      C₂.fill (.evar n ⊓ (φ ⊓ ψ))) m = ⊤ := by
+  simp only [hinterp_impl, hinterp_conj]
+  rw [himp_eq_top_iff, hinterp_fill, hinterp_fill, hinterp_fill]
+  rw [iSup_inf_eq]; apply iSup_le; intro a
+  rw [inf_iSup_eq]; apply iSup_le; intro b
+  apply le_iSup_of_le b
+  simp only [hinterp_conj, hinterp_evar]
+  -- goal: (E a x ⊓ φ a ⊓ K₁ a m) ⊓ (E b x ⊓ ψ b ⊓ K₂ b m) ≤ E b x ⊓ (φ b ⊓ ψ b) ⊓ K₂ b m
+  refine le_inf (le_inf ?_ (le_inf ?_ ?_)) ?_
+  · exact inf_le_right.trans (inf_le_left.trans inf_le_left)
+  · refine le_trans ?_ (hinterp_ext φ ρ a b)
+    refine le_trans (le_inf ?_ ?_) (inf_le_inf_right _ (M.E_trans_symm a b (ρ.evar n)))
+    · exact le_inf (inf_le_left.trans (inf_le_left.trans inf_le_left))
+        (inf_le_right.trans (inf_le_left.trans inf_le_left))
+    · exact inf_le_left.trans (inf_le_left.trans inf_le_right)
+  · exact inf_le_right.trans (inf_le_left.trans inf_le_right)
+  · exact inf_le_right.trans inf_le_right
 
+/-- The classical negative SINGLETON `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])` is sound as
+well (it is a derived rule of the proof system; this is a direct semantic
+proof). -/
 theorem hvalid_singleton {C₁ C₂ : AppCtx Symbol} {n : EVarIndex}
     {φ : Pattern Symbol} (m : M.Carrier) :
     hinterp M ρ (~(C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n ⊓ ~φ))) m = ⊤ := by
