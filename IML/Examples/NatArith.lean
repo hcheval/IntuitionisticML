@@ -75,9 +75,6 @@ def Pattern.add_ : Pattern Symbol := .symbol HasAddOps.add
 omit [HasCeil Symbol] [HasNatOps Symbol] in
 theorem evarLift_add : evarLift (add_ : Pattern Symbol) = add_ := rfl
 
-omit [HasCeil Symbol] [HasNatOps Symbol] [HasAddOps Symbol] in
-theorem evarLift_app (φ ψ : Pattern Symbol) : evarLift (φ ⬝ ψ) = evarLift φ ⬝ evarLift ψ := rfl
-
 /-- `Γ` contains the naturals together with the recursive equations of `add`. -/
 class IsAddTheory (Symbol : Type) [HasCeil Symbol] [HasNatOps Symbol] [HasAddOps Symbol]
     (Γ : Set (Pattern Symbol)) : Prop extends IsNatTheory Symbol Γ where

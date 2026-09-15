@@ -118,6 +118,9 @@ theorem evarLift_conj (φ ψ : Pattern Symbol) :
 omit [HasCeil Symbol] [HasNatOps Symbol] in
 theorem evarLift_neg (φ : Pattern Symbol) : evarLift (~φ) = ~(evarLift φ) := rfl
 
+omit [HasCeil Symbol] [HasNatOps Symbol] in
+theorem evarLift_app (φ ψ : Pattern Symbol) : evarLift (φ ⬝ ψ) = evarLift φ ⬝ evarLift ψ := rfl
+
 /-- The application context `succ ⬝ □`. -/
 def succCtx : AppCtx Symbol := .right succ_ .hole
 
@@ -411,6 +414,7 @@ def decPred (y : EVarIndex) : Pattern Symbol := ∀ₑ ((.evar 0 ∈ₘₗ nat_)
 /-- The set `{y | equality with y is decidable}`, as `∃y. y ⊓ decPred y`. -/
 def decSet : Pattern Symbol := ∃ₑ (.evar 0 ⊓ decPred 0)
 
+omit [HasNatOps Symbol] in
 theorem evarLift_eqDec (y x : EVarIndex) :
     evarLift (eqDec y x : Pattern Symbol) = eqDec (y + 1) (x + 1) := by
   simp [eqDec, Pattern.eqI, Pattern.totalI, Pattern.memML, Pattern.ceil, Pattern.iff,
@@ -456,7 +460,7 @@ def decPred_out (C : AppCtx Symbol) (y : EVarIndex) {φ : Pattern Symbol} :
             (implAnd (.syllogism andElimRight andElimLeft)
               (.syllogism (implAnd (.syllogism andElimRight andElimRight) andElimLeft)
                 (.syllogism (andMonoLeft (decPred_elim (y + 1) 0)) andMp))))
-          (eqDec_out C.liftEVar (y + 1) 0))))
+          (eqDec_out C.liftEVar (y + 1) 0)))))
 
 /-- **Internal congruence of `succ`** (needs predicate propagation):
 `(y =ⁱ k) ⊓ (succ y =ⁱ w) ⇒ (succ k =ⁱ w)`. Under the binder of `=ⁱ`, `y`
@@ -470,10 +474,12 @@ def eqI_congr_succ (y k w : EVarIndex) :
     (.syllogism
       (implAnd andElimLeft
         (eqI_leibniz_ceil
-          (.conjR (.evar 0) (.conjL (.implL .hole (.evar (w + 1))) (.evar (w + 1) ⇒ succ_ ⬝ .evar (y + 1))))
+          (.conjR (.evar 0)
+            (.conjL (.implL .hole (.evar (w + 1))) (.evar (w + 1) ⇒ succ_ ⬝ .evar (y + 1))))
           succCtx))
       (eqI_leibniz_ceil
-        (.conjR (.evar 0) (.conjR (succ_ ⬝ .evar (k + 1) ⇒ .evar (w + 1)) (.implR (.evar (w + 1)) .hole)))
+        (.conjR (.evar 0)
+          (.conjR (succ_ ⬝ .evar (k + 1) ⇒ .evar (w + 1)) (.implR (.evar (w + 1)) .hole)))
         succCtx))
 
 /-- Base case: equality with `zero` is decidable. Name `zero` as `v`; for a
@@ -492,16 +498,17 @@ def decBase : Γ ⊩ᵢ zero_ ⇒ decSet :=
       (implAnd (.syllogism (andMonoLeft (.syllogism andElimLeft andElimLeft)) eqI_trans)
         (.syllogism andElimLeft (.syllogism andElimRight (.syllogism andElimRight eqI_symm))))
       (.syllogism eqI_trans (noConfusion 0)))
+  -- under ∀x: the successor case, with the existential
+  let cSucc' : Γ ⊩ᵢ ((zero_ =ⁱₘₗ .evar 1) ⊓ zero_) ⊓
+      ∃ₑ ((.evar 0 ∈ₘₗ nat_) ⊓ (succ_ ⬝ .evar 0 =ⁱₘₗ .evar 1)) ⇒ ~(.evar 1 =ⁱₘₗ .evar 0) :=
+    .syllogism pushConjInExist' (.existGen (φ₂ := ~(.evar 1 =ⁱₘₗ .evar 0)) (by
+      simp only [evarLift_conj, evarLift_eqI, evarLift_zero, evarLift_evar, evarLift_neg]
+      exact cSucc))
   let s₂ : Γ ⊩ᵢ (zero_ =ⁱₘₗ .evar 0) ⊓ zero_ ⇒ decPred 0 :=
     .forallGen (φ₁ := (zero_ =ⁱₘₗ .evar 0) ⊓ zero_) (by
       rw [evarLift_conj, evarLift_eqI, evarLift_zero, evarLift_evar]
       exact .exportation (.syllogism (andMonoRight (natCasesEq 0))
-        (.syllogism andOrDistrib (orElim cZero
-          (.syllogism pushConjInExist'
-            (.existGen (φ₂ := ~(.evar 1 =ⁱₘₗ .evar 0)) (by
-              rw [evarLift_conj, evarLift_eqI, evarLift_zero, evarLift_evar, evarLift_neg,
-                evarLift_eqI, evarLift_evar, evarLift_evar]
-              exact .syllogism cSucc orIntroRight))))))
+        (.syllogism andOrDistrib (orElim cZero (.syllogism cSucc' orIntroRight)))))
   .syllogism (.syllogism (implAnd (extraPremise zeroFunctional) implSelf) pushConjInExist)
     (existMono (implAnd s₁ s₂))
 
@@ -603,9 +610,10 @@ def natEqDecidable (n m : EVarIndex) :
             (implAnd (.syllogism andElimLeft andElimRight)
               (.syllogism (andMono (.syllogism andElimLeft eqI_symm) implSelf) eqI_trans))
             andMp))))
+  let s₀ : Γ ⊩ᵢ (.evar n ∈ₘₗ decSet) ⇒ ∃ₑ (.evar (n + 1) ∈ₘₗ (.evar 0 ⊓ decPred 0)) := by
+    rw [← evarLift_evar]; exact iffMpLeft memExist
   .syllogism
-    (andMonoLeft (.syllogism (ceil_mono (andMonoRight natEqDecidableSet))
-      (by rw [← evarLift_evar]; exact iffMpLeft memExist)))
+    (andMonoLeft (.syllogism (ceil_mono (andMonoRight natEqDecidableSet)) s₀))
     (.syllogism pushConjInExist (.existGen (φ₂ := eqDec n m) (by
       rw [evarLift_eqDec]
       simp only [Pattern.memML, evarLift_ceil, evarLift_conj, evarLift_evar, evarLift_nat]
