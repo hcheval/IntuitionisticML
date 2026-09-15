@@ -42,8 +42,9 @@ Verdict codes:
 
 1. **⊥-propagation is derivable.** `C[⊥] ⇒ ⊥` needs no new rule: Mircea Sebe's
    classical proof (thesis Prop. 3.3(1)) uses only `⊥ ⇒ ·`, framing, pairing and
-   SINGLETON, all intuitionistic. Lean: `IML.ctxBot` (`IML.Proof.botProp`,
-   axiom-free). Taking `⊥ := µX.X` instead of a primitive `⊥` changes nothing
+   SINGLETON, all intuitionistic. Lean: `IML.ctxBot` (`IML.Proof.botProp`;
+   its only axiom is `propext`, from the rewrite that lifts the context past
+   the binder). Taking `⊥ := µX.X` instead of a primitive `⊥` changes nothing
    (`IML.muSvarIffBot`).
 
 2. **The current system is incomplete for its Heyting semantics.** The
@@ -331,9 +332,11 @@ an impossibility**: 36 (it is derivable now).
 
 ## 8. What is in `IML/DerivedRules/`
 
-All files are sorry-free; `IML.ctxBot` and `IML.p2` are axiom-free, everything
-else uses only `propext`, `Classical.choice`, `Quot.sound` (checked with
-`#print axioms`).
+All files are sorry-free; `IML.p2` is axiom-free, `IML.ctxBot` uses only
+`propext`, and everything else (including `IML.soundness`,
+`IML.Crisp.soundness`, `IML.Examples.ExcludedMiddle.excludedMiddle_not_derivable`
+and every `*_not_derivable` above) uses only `propext`, `Classical.choice`,
+`Quot.sound` (checked with `#print axioms`).
 
 | File | Lines | Content |
 |---|---|---|
