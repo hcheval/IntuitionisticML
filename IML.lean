@@ -14,6 +14,8 @@ import IML.Crisp.LFPSoundness
 import IML.Crisp.Bridge
 import IML.DerivedRules
 import IML.SingletonAlt
+import IML.Theories.Nat
+import IML.Examples.NatArith
 import IML.Examples.Kripke
 import IML.Examples.OpenSets
 import IML.Examples.ExcludedMiddle
