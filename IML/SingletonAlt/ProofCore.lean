@@ -29,7 +29,7 @@ intuitionistically) are in `Countermodels.lean`.
 
 namespace IML
 
-open Pattern
+open Pattern Crisp
 
 -- ─────────────────────────────────────────────────────────────
 -- The core system

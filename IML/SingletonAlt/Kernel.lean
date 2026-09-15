@@ -1,7 +1,11 @@
-import IML.HeytingSoundness
+import IML.Crisp.HeytingSoundness
 
 /-!
 # The context kernel lemma, and soundness of the positive singleton axioms
+
+This file works over the crisp semantics (`IML.Crisp`: element variables denote singletons
+via a decidable equality). See the porting note below for the `L`-valued-equality semantics
+of `IML.HeytingSemantics`.
 
 For every application context `C` there is a kernel `K_C : Carrier → Carrier → L` with
 
@@ -18,21 +22,25 @@ The two positive variants considered:
 
 Both are sound (`hvalid_singletonAlt`, `hvalid_singletonStrong`).
 
-## Porting note (L-valued equality)
+## Porting note (L-valued equality, `IML.HeytingSemantics` on `main`)
 
 `K_hole a m` is deliberately its own definition. Under the generalized semantics in which
 `hinterp (.evar i) m = E m (ρ.evar i)` for an `L`-valued equality `E`, one sets
-`K_hole a m := E a m`; `hinterp_fill` goes through unchanged (its proof never unfolds
-`K_hole`). The collapse lemmas `iSup_evar_inf` / `iSup_evar_conj_inf` become inequalities
-`≤` rather than equalities, and the soundness argument for `singletonAlt` becomes: for fixed
-witnesses `a` (from `C₁[x ⊓ φ]`) and `b` (from `C₂[x]`), `E a e ⊓ E b e ≤ E a b` by
-symmetry and transitivity, and extensionality of the interpretation (`hinterp_ext`) gives
-`E a b ⊓ φ a ≤ φ b`, so the witness `b` also witnesses `C₂[x ⊓ φ]`.
+`K_hole a m := E a m`. The hole case of `hinterp_fill` then reads
+`⨆ a, ⟦X⟧ a ⊓ E a m = ⟦X⟧ m`, i.e. `hull ⟦X⟧ = ⟦X⟧`, which is `hull_eq_of_ext (hinterp_ext X ρ)`;
+the `left`/`right` cases never unfold `K_hole` and go through unchanged. Every kernel is
+extensional in its first argument (`E a b ⊓ K_C b m ≤ K_C a m`, by induction from `E_trans`),
+so the collapse lemmas `iSup_evar_inf` / `iSup_evar_conj_inf` survive as equalities:
+`≤` by extensionality of `⟦φ⟧` and `K_C`, `≥` by taking `a := e` and `E_refl`. The soundness
+argument for `singletonAlt` is then literally the same last line. Equivalently, for fixed
+witnesses `a` (from `C₁[x ⊓ φ]`) and `b` (from `C₂[x]`): `E a e ⊓ E b e ≤ E a b` by symmetry
+and transitivity, and `hinterp_ext` gives `E a b ⊓ φ a ≤ φ b`, so `b` also witnesses
+`C₂[x ⊓ φ]`.
 -/
 
 namespace IML
 
-open Pattern
+open Pattern Crisp
 
 variable {Symbol : Type} {L : Type*} [Order.Frame L]
          {M : HModel Symbol L} {ρ : HValuation M}
