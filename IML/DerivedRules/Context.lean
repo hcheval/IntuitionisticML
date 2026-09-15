@@ -9,7 +9,9 @@ Lemma 3.4, Theorem 3.2) to iML.
 The headline is `ctxBot : C[⊥] ⇒ ⊥`. iML has no PROPAGATION⊥ rule, but the
 classical derivation (credited to Mircea Sebe in the thesis) only uses
 `⊥ ⇒ ·`, framing, pairing and SINGLETON, all of which are intuitionistic, so
-⊥-propagation is derivable after all.
+⊥-propagation is derivable after all. It is already `Proof.botProp` in
+`IML/Proof.lean`, where it is needed to derive the classical negative
+SINGLETON from the positive one.
 
 What is *not* derivable is the ¬¬-propagation `C[~~φ] ⇒ ~~C[φ]`; see
 `IML.DerivedRules.TopFilterModel` for the countermodel. This is the reason
@@ -42,13 +44,11 @@ def ctxFramingEquiv (C : AppCtx Symbol) (h : Γ ⊩ᵢ φ ⟺ ψ) :
 -- Propagation of ⊥ (Proposition 3.3(1)) — via SINGLETON
 -- ─────────────────────────────────────────────────────────────
 
-/-- `C[⊥] ⇒ ⊥`.  Derivation: `C[⊥] ⇒ C[x ⊓ ⊥] ⊓ C[x ⊓ ~⊥]` by framing
-`⊥ ⇒ ·` twice, and SINGLETON refutes the right-hand side. -/
-def ctxBot (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill ⊥ₘ ⇒ ⊥ₘ :=
-  .syllogism
-    (implAnd (ctxFraming C (botElim (φ := .evar 0 ⊓ ⊥ₘ)))
-             (ctxFraming C (botElim (φ := .evar 0 ⊓ ~⊥ₘ))))
-    (.singleton (C₁ := C) (C₂ := C) (n := 0) (φ := ⊥ₘ))
+/-- `C[⊥] ⇒ ⊥` (`Proof.botProp`). The classical derivation
+`C[⊥] ⇒ C[x ⊓ ⊥] ⊓ C[x ⊓ ~⊥]` by framing `⊥ ⇒ ·` twice, refuted by the
+negative SINGLETON, works as well; `Proof.botProp` goes through the
+positive rule directly. -/
+def ctxBot (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill ⊥ₘ ⇒ ⊥ₘ := .botProp C
 
 def ctxBotR (C : AppCtx Symbol) : Γ ⊩ᵢ ⊥ₘ ⇒ C.fill ⊥ₘ := botElim
 

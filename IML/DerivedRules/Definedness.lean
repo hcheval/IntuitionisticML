@@ -7,23 +7,33 @@ import IML.DerivedRules.Context
 derives the whole membership calculus of the system P from this. Which of
 it survives intuitionistically?
 
-* Survives (proved here): definedness of variables, `⌈·⌉` monotone,
-  `⌈⊥⌉ ⇒ ⊥`, `⌈φ ⊔ ψ⌉ ⟺ ⌈φ⌉ ⊔ ⌈ψ⌉`, `⌈∃x.φ⌉ ⟺ ∃x.⌈φ⌉`,
-  membership introduction, Membership∨, Membership∃, one half each of
-  Membership∧ and Membership¬, equality introduction/reflexivity/symmetry,
-  and `⌊φ⌋ⁱ ⇒ ⌊φ⌋` where `⌊φ⌋ⁱ := ∀x. x ∈ φ` is the *positive* totality.
+The proof system's SINGLETON rule is the positive
+`singletonStrong : C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ (φ ⊓ ψ)]`
+(`IML/Proof.lean`): information about an element variable can be
+*transported* between contexts. This is what the membership calculus needs;
+every classical proof of the results below routes instead through the
+*membership excluded middle* `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉`, which is unsound
+in the Heyting semantics. With the negative rule alone (the published
+system, `IML.Crisp.Proof`) the items marked (†) are underivable
+(`IML.TopFilter.phi_impl_ceil_not_derivable`); they used to be stated here
+under a hypothesis `SingletonPos`, which is now the rule.
 
-* Weakened: membership elimination gives only `~~φ`; Lemma 3.19(→) gives
-  only `~~φ`; `⌊φ⌋ ⇒ ~~φ` instead of `⌊φ⌋ ⇒ φ`.
+* Derivable: definedness of variables, `⌈·⌉` monotone, `⌈⊥⌉ ⇒ ⊥`,
+  `⌈φ ⊔ ψ⌉ ⟺ ⌈φ⌉ ⊔ ⌈ψ⌉`, `⌈∃x.φ⌉ ⟺ ∃x.⌈φ⌉`, membership introduction,
+  Membership∨, Membership∃, Membership∧ in both directions (†),
+  Membership⇒ (†), one half of Membership¬, membership *elimination*
+  `⌈x ⊓ φ⌉ ⇒ x ⇒ φ` (†), Lemma 3.8 `⌊φ⌋ⁱ ⇒ φ` for the positive totality
+  `⌊φ⌋ⁱ := ∀x. x ∈ φ` (†), Lemma 3.14 `C[φ] ⇒ ⌈φ⌉` and Corollary 3.1
+  `φ ⇒ ⌈φ⌉` (†), Lemma 3.19 `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)` in both directions (†),
+  equality introduction/reflexivity/symmetry, and `⌊φ⌋ⁱ ⇒ ⌊φ⌋`.
 
-* Not derivable without a new principle: `C[φ] ⇒ ⌈φ⌉` (Lemma 3.14),
-  Membership∧(←), Membership¬(←), Lemma 3.19(←). Every classical proof of
-  these routes through the *membership excluded middle*
-  `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉`, which is unsound in the Heyting semantics.
-  We isolate the sound principle `SingletonPos` (a positive companion of
-  SINGLETON, classically derivable) and show it recovers Lemma 3.14 and
-  Membership∧(←). `TopFilterModel` shows that `φ ⇒ ⌈φ⌉` and
-  Membership¬(←) are genuinely underivable.
+* Weakened: for the classical totality `⌊φ⌋ := ~⌈~φ⌉` only `⌊φ⌋ ⇒ ~~φ`
+  (Corollary 3.1 gives `⌊φ⌋ ⇒ φ` classically, by DNE).
+
+* Open: Membership¬(←) `~(x ∈ φ) ⇒ x ∈ ~φ`. It is underivable in the
+  published system (`IML.TopFilter.memNegIntro_not_derivable`); that
+  countermodel does not validate the positive rule, so its status in the
+  current system is not settled here.
 -/
 
 namespace IML
@@ -68,7 +78,7 @@ class IsDefinedness (Symbol : Type) [HasCeil Symbol] (Γ : Set (Pattern Symbol))
 variable {Γ : Set (Pattern Symbol)} [IsDefinedness Symbol Γ] {φ ψ x : Pattern Symbol}
 
 -- ─────────────────────────────────────────────────────────────
--- Basic facts (all intuitionistic)
+-- Basic facts
 -- ─────────────────────────────────────────────────────────────
 
 def defProof : Γ ⊩ᵢ ∀ₑ ⌈.evar 0⌉ := .assumption IsDefinedness.defAxiom
@@ -91,9 +101,6 @@ def ceil_exist : Γ ⊩ᵢ ⌈∃ₑ φ⌉ ⟺ ∃ₑ ⌈φ⌉ :=
   iffIntro (ctxPropagationExist ceilCtx) (ctxPropagationExistR ceilCtx)
 
 def ceil_and : Γ ⊩ᵢ ⌈φ ⊓ ψ⌉ ⇒ ⌈φ⌉ ⊓ ⌈ψ⌉ := ctxAnd ceilCtx
-
-def ceil_evar_top {n : EVarIndex} : Γ ⊩ᵢ ⌈.evar n ⊓ ⊤ₘ⌉ :=
-  .mp (ceil_mono (implAnd implSelf implTop)) ceil_of_evar
 
 -- ─────────────────────────────────────────────────────────────
 -- Totality and equality: introduction is fine (Lemma 3.5, 3.6)
@@ -120,13 +127,13 @@ def totalI_impl_total : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ ⌊φ⌋ :=
     .syllogism (ceil_mono (.syllogism (implAnd (extraPremise .existence) implSelf)
                                       pushConjInExist))
                (ctxPropagationExist ceilCtx)
-  -- ⌈x ⊓ φ⌉ ⇒ ⌈x ⊓ ~φ⌉ ⇒ ⊥   (SINGLETON)
+  -- ⌈x ⊓ φ⌉ ⇒ ⌈x ⊓ ~φ⌉ ⇒ ⊥   (the negative SINGLETON)
   let k : Γ ⊩ᵢ ⌈.evar 0 ⊓ evarLift φ⌉ ⇒ (⌈.evar 0 ⊓ evarLift (~φ)⌉ ⇒ evarLift ⊥ₘ) :=
     .exportation (.singleton (C₁ := ceilCtx) (C₂ := ceilCtx) (n := 0) (φ := evarLift φ))
   .syllogism (.syllogism (forallMono k) forallImplExist) (implPreComp s₁)
 
 -- ─────────────────────────────────────────────────────────────
--- Membership (Lemmas 3.7, 3.10(→), 3.11, 3.12(→), 3.13)
+-- Membership (Lemmas 3.7, 3.10(→), 3.11, 3.12, 3.13)
 -- ─────────────────────────────────────────────────────────────
 
 /-- Membership introduction (Lemma 3.7): from `φ` infer `x ∈ φ`. -/
@@ -143,11 +150,23 @@ def memOr : Γ ⊩ᵢ x ∈ₘₗ (φ ⊔ ψ) ⟺ (x ∈ₘₗ φ) ⊔ (x ∈ₘ
   iffIntro (.syllogism (ceil_mono andOrDistrib) (ctxPropagationOr ceilCtx))
            (.syllogism (ctxPropagationOrR ceilCtx) (ceil_mono andOrDistrib'))
 
-/-- Membership∧, the derivable half: `x ∈ (φ ⊓ ψ) ⇒ x ∈ φ ⊓ x ∈ ψ`. -/
+/-- Membership∧(→): `x ∈ (φ ⊓ ψ) ⇒ x ∈ φ ⊓ x ∈ ψ`. -/
 def memAndElim : Γ ⊩ᵢ x ∈ₘₗ (φ ⊓ ψ) ⇒ (x ∈ₘₗ φ) ⊓ (x ∈ₘₗ ψ) :=
   implAnd (ceil_mono (andMonoRight andElimLeft)) (ceil_mono (andMonoRight andElimRight))
 
-/-- Membership¬, the derivable half: `x ∈ ~φ ⇒ ~(x ∈ φ)` (by SINGLETON). -/
+/-- Membership∧(←): `x ∈ φ ⊓ x ∈ ψ ⇒ x ∈ (φ ⊓ ψ)`. This is literally the
+`C₁ := C₂ := ⌈□⌉` instance of the positive SINGLETON. -/
+def memAndIntro {n : EVarIndex} :
+    Γ ⊩ᵢ (.evar n ∈ₘₗ φ) ⊓ (.evar n ∈ₘₗ ψ) ⇒ .evar n ∈ₘₗ (φ ⊓ ψ) :=
+  .singletonStrong (C₁ := ceilCtx) (C₂ := ceilCtx) (n := n) (φ := φ) (ψ := ψ)
+
+/-- Membership∧ (Lemma 3.12): `x ∈ (φ ⊓ ψ) ⟺ x ∈ φ ⊓ x ∈ ψ`. -/
+def memAnd {n : EVarIndex} :
+    Γ ⊩ᵢ .evar n ∈ₘₗ (φ ⊓ ψ) ⟺ (.evar n ∈ₘₗ φ) ⊓ (.evar n ∈ₘₗ ψ) :=
+  iffIntro memAndElim memAndIntro
+
+/-- Membership¬, the derivable half: `x ∈ ~φ ⇒ ~(x ∈ φ)` (by the negative
+SINGLETON). -/
 def memNegElim {n : EVarIndex} : Γ ⊩ᵢ .evar n ∈ₘₗ (~φ) ⇒ ~(.evar n ∈ₘₗ φ) :=
   flip (.exportation (.singleton (C₁ := ceilCtx) (C₂ := ceilCtx) (n := n) (φ := φ)))
 
@@ -158,8 +177,14 @@ def memExist : Γ ⊩ᵢ x ∈ₘₗ (∃ₑ φ) ⟺ ∃ₑ (evarLift x ∈ₘ�
     (.syllogism (ctxPropagationExistR ceilCtx)
       (ceil_mono (.existGen (φ₂ := x ⊓ ∃ₑ φ) (andMono implSelf existIntroLift))))
 
-/-- Membership⇒, the derivable half: `x ∈ (φ ⇒ ψ) ⊓ x ∈ φ ⇒ x ∈ ψ` needs
-Membership∧(←); what is derivable outright is `x ∈ (φ ⇒ ψ) ⇒ ~(x ∈ (φ ⊓ ~ψ))`. -/
+/-- Membership⇒: `x ∈ (φ ⇒ ψ) ⊓ x ∈ φ ⇒ x ∈ ψ`, by Membership∧(←) and modus
+ponens inside `⌈·⌉`. -/
+def memImplElim {n : EVarIndex} :
+    Γ ⊩ᵢ (.evar n ∈ₘₗ (φ ⇒ ψ)) ⊓ (.evar n ∈ₘₗ φ) ⇒ .evar n ∈ₘₗ ψ :=
+  .syllogism memAndIntro (ceil_mono (andMonoRight andMp))
+
+/-- The negative form `x ∈ (φ ⇒ ψ) ⇒ ~(x ∈ (φ ⊓ ~ψ))`, which is all that the
+negative SINGLETON gives. -/
 def memImplElimWeak {n : EVarIndex} :
     Γ ⊩ᵢ .evar n ∈ₘₗ (φ ⇒ ψ) ⇒ ~(.evar n ∈ₘₗ (φ ⊓ ~ψ)) :=
   -- (φ ⇒ ψ) ⇒ ~(φ ⊓ ~ψ)
@@ -169,81 +194,78 @@ def memImplElimWeak {n : EVarIndex} :
   .syllogism (ceil_mono (andMonoRight k)) memNegElim
 
 -- ─────────────────────────────────────────────────────────────
--- Membership elimination: only up to double negation (Lemma 3.8, 3.19)
+-- Membership elimination (Lemma 3.8, 3.19(→))
 -- ─────────────────────────────────────────────────────────────
 
-/-- SINGLETON in the form `⌈x ⊓ φ⌉ ⇒ x ⇒ ~~φ`. -/
+/-- **Membership elimination** `⌈x ⊓ φ⌉ ⇒ x ⇒ φ`: the `C₁ := ⌈□⌉, C₂ := □`
+instance of the positive SINGLETON (in its `singletonAlt` form
+`⌈x ⊓ φ⌉ ⊓ x ⇒ x ⊓ φ`). The negative rule only gives `⌈x ⊓ φ⌉ ⇒ x ⇒ ~~φ`
+(`ceil_evar_impl_nn`). -/
+def ceil_evar_impl {n : EVarIndex} : Γ ⊩ᵢ ⌈.evar n ⊓ φ⌉ ⇒ .evar n ⇒ φ :=
+  .exportation (.syllogism
+    (.singletonAlt (C₁ := ceilCtx) (C₂ := .hole) (n := n) (φ := φ)) andElimRight)
+
+/-- The double-negation form `⌈x ⊓ φ⌉ ⇒ x ⇒ ~~φ`, a corollary. -/
 def ceil_evar_impl_nn {n : EVarIndex} :
     Γ ⊩ᵢ ⌈.evar n ⊓ φ⌉ ⇒ .evar n ⇒ ~~φ :=
-  .exportation (.exportation (.syllogism andAssoc
-    (.singleton (C₁ := ceilCtx) (C₂ := .hole) (n := n) (φ := φ))))
+  .syllogism ceil_evar_impl (implLift dni)
 
-/-- Lemma 3.8, intuitionistic form: from `∀x. x ∈ φ` infer `~~φ`.
-The classical conclusion `φ` would need DNE. -/
-def totalI_impl_nn : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ ~~φ :=
-  implMp (.syllogism (forallMono (ceil_evar_impl_nn (n := 0) (φ := evarLift φ)))
-                     (forallImplExist (ψ := .evar 0) (χ := ~~φ)))
+/-- Lemma 3.8: `(∀x. x ∈ φ) ⇒ φ`, internal form. -/
+def totalI_impl : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ φ :=
+  implMp (.syllogism (forallMono (ceil_evar_impl (n := 0) (φ := evarLift φ)))
+                     (forallImplExist (ψ := .evar 0) (χ := φ)))
          (extraPremise .existence)
 
-/-- Internal form: `⌊φ⌋ⁱ ⇒ ~~φ`. Whether `⌊φ⌋ⁱ ⇒ φ` (sound!) is derivable
-is open; see the report. -/
-def memElimWeak (h : Γ ⊩ᵢ ⌊φ⌋ⁱ) : Γ ⊩ᵢ ~~φ := .mp totalI_impl_nn h
+/-- Lemma 3.8: from `∀x. x ∈ φ` infer `φ`. -/
+def memElim (h : Γ ⊩ᵢ ⌊φ⌋ⁱ) : Γ ⊩ᵢ φ := .mp totalI_impl h
 
-/-- Lemma 3.19(→), intuitionistic form: `∃y. (⌈y ⊓ φ⌉ ⊓ y) ⇒ ~~φ`. -/
-def existCeilEvar_impl_nn :
-    Γ ⊩ᵢ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) ⇒ ~~φ :=
-  .existGen (φ₂ := ~~φ) (.importation ceil_evar_impl_nn)
+/-- The double-negation form `⌊φ⌋ⁱ ⇒ ~~φ`, a corollary. -/
+def totalI_impl_nn : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ ~~φ := .syllogism totalI_impl dni
+
+/-- Lemma 3.19(→): `∃y. (⌈y ⊓ φ⌉ ⊓ y) ⇒ φ`. -/
+def existCeilEvar_impl : Γ ⊩ᵢ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) ⇒ φ :=
+  .existGen (φ₂ := φ) (.importation ceil_evar_impl)
 
 -- ─────────────────────────────────────────────────────────────
--- The positive singleton principle
+-- Definedness of what a context sees (Lemma 3.14, Corollary 3.1, 3.19(←))
 -- ─────────────────────────────────────────────────────────────
 
-/-- `C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ φ ⊓ ψ]`: an element variable matches at
-most one element, so information about it can be *transported* between
-contexts. Sound for the Heyting semantics; classically derivable from
-SINGLETON and PROPAGATION∨ by splitting `ψ` as `(ψ ⊓ φ) ⊔ (ψ ⊓ ~φ)`;
-intuitionistically we take it as a hypothesis. -/
-def SingletonPos (Γ : Set (Pattern Symbol)) : Type :=
-  ∀ (C₁ C₂ : AppCtx Symbol) (n : EVarIndex) (φ ψ : Pattern Symbol),
-    Γ ⊩ᵢ C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n ⊓ ψ) ⇒ C₂.fill ((.evar n ⊓ φ) ⊓ ψ)
-
-/-- With `SingletonPos`: `C[x ⊓ φ] ⇒ ⌈φ⌉` (the core of Lemma 3.14). -/
-def ctx_evar_impl_ceil (hs : SingletonPos Γ) (C : AppCtx Symbol) {n : EVarIndex} :
+/-- `C[x ⊓ φ] ⇒ ⌈φ⌉` (the core of Lemma 3.14): transport `x ⊓ φ` from `C`
+into `⌈x⌉`, which definedness provides. -/
+def ctx_evar_impl_ceil (C : AppCtx Symbol) {n : EVarIndex} :
     Γ ⊩ᵢ C.fill (.evar n ⊓ φ) ⇒ ⌈φ⌉ :=
-  .syllogism (implAnd implSelf (extraPremise ceil_evar_top))
-    (.syllogism (hs C ceilCtx n φ ⊤ₘ)
-      (ceil_mono (.syllogism andElimLeft andElimRight)))
+  .syllogism (implAnd implSelf (extraPremise ceil_of_evar))
+    (.syllogism (.singletonAlt (C₁ := C) (C₂ := ceilCtx) (n := n) (φ := φ))
+      (ceil_mono andElimRight))
 
-/-- Lemma 3.14 with `SingletonPos`: `C[φ] ⇒ ⌈φ⌉`. -/
-def ctxImplDefined (hs : SingletonPos Γ) (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill φ ⇒ ⌈φ⌉ :=
+/-- Lemma 3.14: `C[φ] ⇒ ⌈φ⌉`. -/
+def ctxImplDefined (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill φ ⇒ ⌈φ⌉ :=
   let s₁ : Γ ⊩ᵢ φ ⇒ ∃ₑ (.evar 0 ⊓ evarLift φ) :=
     .syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist
   .syllogism (ctxFraming C s₁)
     (.syllogism (ctxPropagationExist C)
-      (.existGen (φ₂ := ⌈φ⌉) (ctx_evar_impl_ceil hs C.liftEVar)))
+      (.existGen (φ₂ := ⌈φ⌉) (ctx_evar_impl_ceil C.liftEVar)))
 
-/-- Corollary 3.1 with `SingletonPos`: `φ ⇒ ⌈φ⌉`. -/
-def phi_impl_ceil (hs : SingletonPos Γ) : Γ ⊩ᵢ φ ⇒ ⌈φ⌉ := ctxImplDefined hs .hole
+/-- Corollary 3.1: `φ ⇒ ⌈φ⌉`. Not derivable in the published system
+(`IML.TopFilter.phi_impl_ceil_not_derivable`). -/
+def phi_impl_ceil : Γ ⊩ᵢ φ ⇒ ⌈φ⌉ := ctxImplDefined .hole
 
-/-- Membership∧(←) with `SingletonPos`. -/
-def memAndIntro (hs : SingletonPos Γ) {n : EVarIndex} :
-    Γ ⊩ᵢ (.evar n ∈ₘₗ φ) ⊓ (.evar n ∈ₘₗ ψ) ⇒ .evar n ∈ₘₗ (φ ⊓ ψ) :=
-  .syllogism (hs ceilCtx ceilCtx n φ ψ) (ceil_mono andAssoc)
+/-- `⌊φ⌋ ⇒ ~~φ` for the classical totality (Corollary 3.1 gives `⌊φ⌋ ⇒ φ`
+classically, by DNE). -/
+def total_elim_nn : Γ ⊩ᵢ ⌊φ⌋ ⇒ ~~φ := contrapositive phi_impl_ceil
 
-/-- `⌊φ⌋ ⇒ ~~φ` with `SingletonPos` (Corollary 3.1 gives `⌊φ⌋ ⇒ φ` classically). -/
-def total_elim_nn (hs : SingletonPos Γ) : Γ ⊩ᵢ ⌊φ⌋ ⇒ ~~φ :=
-  contrapositive (phi_impl_ceil hs)
+/-- `x ⊓ φ ⇒ ⌈x ⊓ φ⌉`. -/
+def evar_and_impl_ceil {n : EVarIndex} : Γ ⊩ᵢ .evar n ⊓ φ ⇒ ⌈.evar n ⊓ φ⌉ :=
+  .syllogism (implAnd implSelf (extraPremise ceil_of_evar))
+    (.singletonAlt (C₁ := .hole) (C₂ := ceilCtx) (n := n) (φ := φ))
 
-/-- With `SingletonPos`: `x ⊓ φ ⇒ ⌈x ⊓ φ⌉`. -/
-def evar_and_impl_ceil (hs : SingletonPos Γ) {n : EVarIndex} :
-    Γ ⊩ᵢ .evar n ⊓ φ ⇒ ⌈.evar n ⊓ φ⌉ :=
-  .syllogism (implAnd implSelf (extraPremise ceil_evar_top))
-    (.syllogism (hs .hole ceilCtx n φ ⊤ₘ) (ceil_mono andElimLeft))
-
-/-- Lemma 3.19(←) with `SingletonPos`: `φ ⇒ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
-def phi_impl_existCeilEvar (hs : SingletonPos Γ) :
-    Γ ⊩ᵢ φ ⇒ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) :=
+/-- Lemma 3.19(←): `φ ⇒ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
+def phi_impl_existCeilEvar : Γ ⊩ᵢ φ ⇒ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) :=
   .syllogism (.syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist)
-    (existMono (implAnd (evar_and_impl_ceil hs) andElimLeft))
+    (existMono (implAnd evar_and_impl_ceil andElimLeft))
+
+/-- Lemma 3.19: `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
+def existCeilEvar_iff : Γ ⊩ᵢ φ ⟺ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) :=
+  iffIntro phi_impl_existCeilEvar existCeilEvar_impl
 
 end IML

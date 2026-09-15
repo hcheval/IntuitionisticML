@@ -20,9 +20,9 @@ repo):
 is valid. The countermodels themselves live in `Countermodels.lean`.
 -/
 
--- Per-theorem async elaboration spawns one thread per declaration; under the wrapper's
--- address-space cap that fails on this file ("failed to create thread"), so elaborate
--- sequentially.
+-- Per-theorem async elaboration spawns one thread per declaration; under the address-space
+-- cap of the build wrappers (`scripts/build.sh`, 30 GB at the time of writing) that still
+-- fails on this file ("failed to create thread", exit 134), so elaborate sequentially.
 set_option Elab.async false
 
 namespace IML

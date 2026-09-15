@@ -1,5 +1,23 @@
 # Which of Chen's matching-logic derivations survive in intuitionistic AML?
 
+> **Status note (branch `singleton-strong`).** This survey was written against the
+> proof system with the classical negative SINGLETON `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])`
+> as primitive, which is now the archived `IML.Crisp.Proof`. The current
+> `IML.Proof` takes the positive rule `singletonStrong : C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒
+> C₂[x ⊓ (φ ⊓ ψ)]` (called `SingletonPos` below) as primitive and derives the
+> negative one. Consequences for the rows below: everything marked "under
+> `SingletonPos`" now holds outright (`ctxImplDefined`, `phi_impl_ceil`,
+> `memAndIntro`, `phi_impl_existCeilEvar`, `total_elim_nn`); in addition
+> membership elimination `⌈x ⊓ φ⌉ ⇒ x ⇒ φ` (`ceil_evar_impl`), Lemma 3.8
+> `⌊φ⌋ⁱ ⇒ φ` (`totalI_impl`, `memElim`), Lemma 3.19 in both directions
+> (`existCeilEvar_iff`) and Membership⇒ (`memImplElim`) are derivable, so the
+> open question about `⌊ψ⌋ⁱ ⇒ ψ` is closed positively. The `TopFilter.*`
+> underivability results are about the published system: the top-filter model
+> refutes the positive rule (`TopFilter.cm_singletonStrong`), so the claim in
+> item 4 that it validates `SingletonPos` is wrong, and `phi_impl_ceil_not_derivable`
+> in particular no longer applies to the current system. Membership¬(←) and
+> ¬¬-propagation remain open for the current system.
+
 Survey of the syntactic, theory-building derivations of Xiaohong Chen's PhD thesis
 (*Matching µ-Logic*, 2023, chapters 3–5 and 7) against the iML proof system of
 `IML/Proof.lean` (27 rules: classical AML minus `p3`, with `∧, ∨, ∀, ν, ⇒, ⊥`
