@@ -1,13 +1,14 @@
 import IML.HeytingSoundness
+import IML.CrispModels
 import Mathlib.Topology.Sets.Opens
 import Mathlib.Topology.Order.UpperLowerSetTopology
 
 /-!
 # Kripke semantics for iAML as an instance of Carrier → L
 
-A Kripke frame (W, ≤) with constant domain M gives an HModel
-with L = Opens (WithUpperSet W). Since opens of the upper set
-topology are exactly the upper sets, truth values are
+A Kripke frame (W, ≤) with constant domain M gives a crisp HModel
+(`IML.crispModel`) with L = Opens (WithUpperSet W). Since opens of the
+upper set topology are exactly the upper sets, truth values are
 upward-closed subsets of W — i.e., persistent propositions.
 
 The Kripke forcing relation `w ⊩ φ(m)` corresponds to
@@ -55,11 +56,8 @@ attribute [instance] KripkeFrame.ord KripkeModel.decEq
 -- ─────────────────────────────────────────────────────────────
 
 def KripkeModel.toHModel {Symbol : Type} (K : KripkeModel Symbol) :
-    HModel Symbol (Opens (WithUpperSet K.World)) where
-  Carrier := K.Carrier
-  decEq := K.decEq
-  appInterp := K.appInterp
-  symInterp := K.symInterp
+    HModel Symbol (Opens (WithUpperSet K.World)) :=
+  crispModel Symbol (Opens (WithUpperSet K.World)) K.Carrier K.appInterp K.symInterp
 
 -- ─────────────────────────────────────────────────────────────
 -- Kripke forcing as membership in the open set

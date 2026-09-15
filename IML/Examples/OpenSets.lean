@@ -1,4 +1,5 @@
 import IML.HeytingSoundness
+import IML.CrispModels
 import Mathlib.Topology.Sets.Opens
 import Mathlib.Topology.Order.Basic
 import Mathlib.Topology.AlexandrovDiscrete
@@ -20,16 +21,18 @@ This is NOT a Boolean algebra in general:
 
 ## The model
 
-Given a topological space X with DecidableEq:
+Given a topological space X:
 - Carrier = M (any type with DecidableEq)
 - L = Opens X
 - Patterns are interpreted as `M → Opens X`
   (each carrier element maps to an open set = "where it's true")
 
-Evar interpretation: `⟦evar i⟧(m) = if m = ρ(i) then ⊤ else ⊥`
+These are *crisp* models (`IML.crispModel`): equality on the carrier is
+ordinary equality, so `⟦evar i⟧(m) = if m = ρ(i) then ⊤ else ⊥`.
 This is ⊤ = X (true everywhere) or ⊥ = ∅ (true nowhere),
 NOT the singleton {m}. The "atomicity" is in the Carrier dimension,
-not the topological dimension.
+not the topological dimension. For a topological model with a genuinely
+`Opens X`-valued equality see `IML.Examples.ExcludedMiddle`.
 -/
 
 namespace IML.Examples
@@ -51,11 +54,8 @@ def topologicalModel (Symbol : Type) (X : Type*) [TopologicalSpace X]
     (M : Type) [DecidableEq M]
     (appI : M → M → M → Opens X)
     (symI : Symbol → M → Opens X) :
-    HModel Symbol (Opens X) where
-  Carrier := M
-  decEq := inferInstance
-  appInterp := appI
-  symInterp := symI
+    HModel Symbol (Opens X) :=
+  crispModel Symbol (Opens X) M appI symI
 
 theorem topological_soundness
     {Symbol : Type} {X : Type*} [TopologicalSpace X]
@@ -122,11 +122,17 @@ A topological iAML model over (W, ≤) with Carrier = M gives:
   where φ(m) holds"
 - Persistence: if φ(m) holds at world w and w ≤ w', then φ(m) holds at w'
 
-This is precisely the Kripke semantics for intuitionistic logic,
-extended with ML's application and fixpoints.
+This is Kripke semantics with a *constant domain* (the same carrier M at
+every world), extended with ML's application and fixpoints. It is not the
+full Kripke semantics of intuitionistic predicate logic: because the
+carrier does not vary with the world, this instance validates the
+constant-domain axiom `∀x (p ∨ q(x)) → p ∨ ∀x q(x)`, which is not
+intuitionistically valid. The general `Opens X` semantics is *not*
+constant-domain in this sense: over a space such as ℝ, infima are
+interiors of intersections, and the constant-domain axiom fails.
 
-The soundness theorem for this instance gives Kripke soundness of iAML
-as a special case.
+The soundness theorem for this instance gives soundness of iAML over
+constant-domain Kripke models as a special case.
 -/
 
 -- Mathlib provides `AlexandrovDiscrete` for the Alexandrov topology.

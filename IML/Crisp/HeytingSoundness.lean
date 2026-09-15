@@ -1,15 +1,13 @@
-import IML.HInterpCommutation
+import IML.Crisp.HInterpCommutation
 
 /-!
 # Soundness of iAML over Carrier → L semantics
 
-Patterns are interpreted as L-valued predicates (Carrier → L) over an
-L-valued equality `E`; see `IML.HeytingSemantics`. SINGLETON is sound
-because every interpretation is extensional (`hinterp_ext`), and
-EXISTENCE because `E` is reflexive. No other rule touches `E`.
+The correct Heyting algebra semantics: patterns interpreted as
+L-valued predicates (Carrier → L), not global lattice elements.
 -/
 
-namespace IML
+namespace IML.Crisp
 
 open Pattern
 
@@ -147,6 +145,13 @@ theorem hvalid_propagationOrRight {φ₁ φ₂ ψ : Pattern Symbol}
 -- Singleton
 -- ─────────────────────────────────────────────────────────────
 
+private theorem evar_conj_eq {n : EVarIndex} (φ : Pattern Symbol)
+    (a : M.Carrier) :
+    hinterp M ρ (.conj (.evar n) φ) a =
+    @ite L (a = ρ.evar n) (M.decEq a (ρ.evar n)) (hinterp M ρ φ a) ⊥ := by
+  change @Min.min L _ (@ite L (a = ρ.evar n) (M.decEq a (ρ.evar n)) ⊤ ⊥) (hinterp M ρ φ a) = _
+  split <;> simp_all
+
 private theorem fill_le_iSup (C : AppCtx Symbol) (X : Pattern Symbol)
     (m : M.Carrier) :
     hinterp M ρ (C.fill X) m ≤ ⨆ a, hinterp M ρ X a := by
@@ -169,24 +174,17 @@ theorem hvalid_singleton {C₁ C₂ : AppCtx Symbol} {n : EVarIndex}
   rw [himp_eq_top_iff]
   apply le_trans (inf_le_inf (fill_le_iSup C₁ _ m) (fill_le_iSup C₂ _ m))
   rw [inf_iSup_eq]
-  apply iSup_le; intro b
-  rw [iSup_inf_eq]
   apply iSup_le; intro a
-  -- `a` matches `x ∧ φ`, `b` matches `x ∧ ¬φ`: then `E a b` holds, so by
-  -- extensionality `φ` transfers from `a` to `b`, contradicting `¬φ b`.
-  simp only [Pattern.neg, hinterp_conj, hinterp_evar, hinterp_impl, hinterp_bot]
-  -- goal: (E a x ⊓ φ a) ⊓ (E b x ⊓ (φ b ⇨ ⊥)) ≤ ⊥
-  refine le_trans (le_inf ?_ (le_trans inf_le_right inf_le_right)) inf_himp_le
-  -- goal: (E a x ⊓ φ a) ⊓ (E b x ⊓ (φ b ⇨ ⊥)) ≤ φ b
-  refine le_trans (le_inf ?_ (le_trans inf_le_left inf_le_right)) (hinterp_ext φ ρ a b)
-  -- goal: (E a x ⊓ φ a) ⊓ (E b x ⊓ (φ b ⇨ ⊥)) ≤ E a b
-  exact le_trans (le_inf (le_trans inf_le_left inf_le_left) (le_trans inf_le_right inf_le_left))
-    (M.E_trans_symm a b (ρ.evar n))
+  rw [iSup_inf_eq]
+  apply iSup_le; intro a'
+  rw [evar_conj_eq φ a', evar_conj_eq (Pattern.neg φ) a]
+  split <;> split <;> simp_all [bot_le]
+  · exact le_bot_iff.mp inf_himp_le
 
 -- ─────────────────────────────────────────────────────────────
 -- Quantifiers
 -- ─────────────────────────────────────────────────────────────
-
+#check himp_eq_sSup
 theorem hvalid_existQuant {φ : Pattern Symbol} {n : EVarIndex}
     (m : M.Carrier) :
     hinterp M ρ (evarSubst 0 (.evar n) φ ⇒ ∃ₑ φ) m = ⊤ := by
@@ -219,11 +217,9 @@ theorem hvalid_forallGen {φ₁ φ₂ : Pattern Symbol}
 
 theorem hvalid_existence (m : M.Carrier) :
     hinterp M ρ (∃ₑ (.evar 0 : Pattern Symbol)) m = ⊤ := by
-  simp only [hinterp_exist]
+  simp only [hinterp, HValuation.pushEVar]
   apply eq_top_iff.mpr
-  refine le_iSup_of_le m ?_
-  change ⊤ ≤ M.E m m
-  rw [M.E_refl]
+  exact le_iSup_of_le m (by split <;> simp_all)
 
 -- ─────────────────────────────────────────────────────────────
 -- Propagation for ∃
@@ -266,13 +262,13 @@ theorem hvalid_svSubst {φ ψ : Pattern Symbol}
 -- ─────────────────────────────────────────────────────────────
 
 private def pushSVar_mono_args {M : HModel Symbol L} {n : SVarIndex}
-    {ρ₁ ρ₂ : HValuation M} (R : M.Carrier → L) (hR : M.Ext R)
+    {ρ₁ ρ₂ : HValuation M} (R : M.Carrier → L)
     (hevar : ρ₁.evar = ρ₂.evar)
     (hsvar_eq : ∀ i, i ≠ n → ρ₁.svar i = ρ₂.svar i)
     (hsvar_le : ∀ m, ρ₁.svar n m ≤ ρ₂.svar n m) :
-    (ρ₁.pushSVar R hR).evar = (ρ₂.pushSVar R hR).evar ∧
-    (∀ i, i ≠ n + 1 → (ρ₁.pushSVar R hR).svar i = (ρ₂.pushSVar R hR).svar i) ∧
-    (∀ m, (ρ₁.pushSVar R hR).svar (n + 1) m ≤ (ρ₂.pushSVar R hR).svar (n + 1) m) :=
+    (ρ₁.pushSVar R).evar = (ρ₂.pushSVar R).evar ∧
+    (∀ i, i ≠ n + 1 → (ρ₁.pushSVar R).svar i = (ρ₂.pushSVar R).svar i) ∧
+    (∀ m, (ρ₁.pushSVar R).svar (n + 1) m ≤ (ρ₂.pushSVar R).svar (n + 1) m) :=
   ⟨hevar, fun i hi => by
     cases i with
     | zero => rfl
@@ -329,14 +325,14 @@ def hinterp_mono_pos {Symbol : Type} {L : Type*} [Order.Frame L]
         (fun i hi => hsvar_eq i hi) hsvar_le m
   | .mu hpφ => by
     simp only [hinterp]
-    apply sInf_le_sInf; intro x ⟨R, hRe, hR, hx⟩
-    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hRe hevar hsvar_eq hsvar_le
-    exact ⟨R, hRe, fun k => le_trans (hinterp_mono_pos hpφ _ _ he hs hl k) (hR k), hx⟩
+    apply sInf_le_sInf; intro x ⟨R, hR, hx⟩
+    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hevar hsvar_eq hsvar_le
+    exact ⟨R, fun k => le_trans (hinterp_mono_pos hpφ _ _ he hs hl k) (hR k), hx⟩
   | .nu hpφ => by
     simp only [hinterp]
-    apply sSup_le_sSup; intro x ⟨R, hRe, hR, hx⟩
-    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hRe hevar hsvar_eq hsvar_le
-    exact ⟨R, hRe, fun k => le_trans (hR k) (hinterp_mono_pos hpφ _ _ he hs hl k), hx⟩
+    apply sSup_le_sSup; intro x ⟨R, hR, hx⟩
+    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hevar hsvar_eq hsvar_le
+    exact ⟨R, fun k => le_trans (hR k) (hinterp_mono_pos hpφ _ _ he hs hl k), hx⟩
 
 def hinterp_mono_neg {Symbol : Type} {L : Type*} [Order.Frame L]
     {M : HModel Symbol L} {φ : Pattern Symbol} {n : SVarIndex}
@@ -386,14 +382,14 @@ def hinterp_mono_neg {Symbol : Type} {L : Type*} [Order.Frame L]
         (fun i hi => hsvar_eq i hi) hsvar_le m
   | .mu hnφ => by
     simp only [hinterp]
-    apply sInf_le_sInf; intro x ⟨R, hRe, hR, hx⟩
-    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hRe hevar hsvar_eq hsvar_le
-    exact ⟨R, hRe, fun k => le_trans (hinterp_mono_neg hnφ _ _ he hs hl k) (hR k), hx⟩
+    apply sInf_le_sInf; intro x ⟨R, hR, hx⟩
+    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hevar hsvar_eq hsvar_le
+    exact ⟨R, fun k => le_trans (hinterp_mono_neg hnφ _ _ he hs hl k) (hR k), hx⟩
   | .nu hnφ => by
     simp only [hinterp]
-    apply sSup_le_sSup; intro x ⟨R, hRe, hR, hx⟩
-    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hRe hevar hsvar_eq hsvar_le
-    exact ⟨R, hRe, fun k => le_trans (hR k) (hinterp_mono_neg hnφ _ _ he hs hl k), hx⟩
+    apply sSup_le_sSup; intro x ⟨R, hR, hx⟩
+    let ⟨he, hs, hl⟩ := pushSVar_mono_args R hevar hsvar_eq hsvar_le
+    exact ⟨R, fun k => le_trans (hR k) (hinterp_mono_neg hnφ _ _ he hs hl k), hx⟩
 end
 
 -- ─────────────────────────────────────────────────────────────
@@ -402,12 +398,11 @@ theorem hvalid_preFixpoint {φ : Pattern Symbol}
     (hpos : SVarPositive φ 0) (m : M.Carrier) :
     hinterp M ρ (svarSubst 0 (μ φ) φ ⇒ μ φ) m = ⊤ := by
   simp only [hinterp]; rw [himp_eq_top_iff, hinterp_svarSubst]
-  apply le_sInf; intro x ⟨S, hSe, hS, hx⟩; subst hx
+  apply le_sInf; intro x ⟨S, hS, hx⟩; subst hx
   have hmu_le : ∀ k, hinterp M ρ (μ φ) k ≤ S k := fun k => by
-    apply sInf_le; exact ⟨S, hSe, hS, rfl⟩
+    apply sInf_le; exact ⟨S, hS, rfl⟩
   exact le_trans
-    (hinterp_mono_pos hpos (ρ.pushSVar (fun n => hinterp M ρ (μ φ) n) (hinterp_ext _ ρ))
-      (ρ.pushSVar S hSe)
+    (hinterp_mono_pos hpos (ρ.pushSVar (fun n => hinterp M ρ (μ φ) n)) (ρ.pushSVar S)
       rfl (fun i hi => by cases i with
         | zero => exact absurd rfl hi
         | succ j => rfl)
@@ -419,23 +414,22 @@ theorem hvalid_knasterTarski {φ ψ : Pattern Symbol}
     (m : M.Carrier) :
     hinterp M ρ (μ φ ⇒ ψ) m = ⊤ := by
   simp only [hinterp]; rw [himp_eq_top_iff]
-  have hpre : ∀ n, hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n) (hinterp_ext ψ ρ)) φ n ≤
+  have hpre : ∀ n, hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n)) φ n ≤
       hinterp M ρ ψ n := fun n => by
     have := h n; simp only [hinterp] at this
     exact himp_eq_top_iff.mp (by rw [hinterp_svarSubst] at this; exact this)
   apply sInf_le
-  exact ⟨fun n => hinterp M ρ ψ n, hinterp_ext ψ ρ, hpre, rfl⟩
+  exact ⟨fun n => hinterp M ρ ψ n, hpre, rfl⟩
 
 theorem hvalid_postFixpoint {φ : Pattern Symbol}
     (hpos : SVarPositive φ 0) (m : M.Carrier) :
     hinterp M ρ (ν φ ⇒ svarSubst 0 (ν φ) φ) m = ⊤ := by
   simp only [hinterp]; rw [himp_eq_top_iff, hinterp_svarSubst]
-  apply sSup_le; intro x ⟨S, hSe, hS, hx⟩; subst hx
+  apply sSup_le; intro x ⟨S, hS, hx⟩; subst hx
   have hnu_ge : ∀ k, S k ≤ hinterp M ρ (ν φ) k := fun k => by
-    apply le_sSup; exact ⟨S, hSe, hS, rfl⟩
+    apply le_sSup; exact ⟨S, hS, rfl⟩
   exact le_trans (hS m)
-    (hinterp_mono_pos hpos (ρ.pushSVar S hSe)
-      (ρ.pushSVar (fun n => hinterp M ρ (ν φ) n) (hinterp_ext _ ρ))
+    (hinterp_mono_pos hpos (ρ.pushSVar S) (ρ.pushSVar (fun n => hinterp M ρ (ν φ) n))
       rfl (fun i hi => by cases i with
         | zero => exact absurd rfl hi
         | succ j => rfl)
@@ -447,11 +441,11 @@ theorem hvalid_park {φ ψ : Pattern Symbol}
     hinterp M ρ (ψ ⇒ ν φ) m = ⊤ := by
   simp only [hinterp]; rw [himp_eq_top_iff]
   have hpost : ∀ n, hinterp M ρ ψ n ≤
-      hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n) (hinterp_ext ψ ρ)) φ n := fun n => by
+      hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n)) φ n := fun n => by
     have := h n; simp only [hinterp] at this
     exact himp_eq_top_iff.mp (by rw [hinterp_svarSubst] at this; exact this)
   apply le_sSup
-  exact ⟨fun n => hinterp M ρ ψ n, hinterp_ext ψ ρ, hpost, rfl⟩
+  exact ⟨fun n => hinterp M ρ ψ n, hpost, rfl⟩
 
 -- ─────────────────────────────────────────────────────────────
 -- Soundness theorem
@@ -459,7 +453,7 @@ theorem hvalid_park {φ ψ : Pattern Symbol}
 
 theorem soundness {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
     (h : Γ ⊩ᵢ φ) :
-    ∀ (L : Type*) [Order.Frame L] (M : HModel Symbol L),
+    ∀ (L : Type*) [inst : Order.Frame L] (M : HModel Symbol L),
     (∀ γ ∈ Γ, HValid M γ) → HValid M φ := by
   induction h with
   | assumption hmem => exact fun _ _ M hΓ ρ m => hΓ _ hmem ρ m
@@ -513,4 +507,4 @@ theorem soundness {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
     exact fun L _ M hΓ ρ m => hvalid_framingRight m (ih L M hΓ ρ)
 
 #print axioms soundness
-end IML
+end IML.Crisp

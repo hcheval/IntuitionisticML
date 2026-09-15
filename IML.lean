@@ -5,5 +5,12 @@ import IML.HeytingSemantics
 import IML.HInterpCommutation
 import IML.HeytingSoundness
 import IML.LFPSoundness
+import IML.CrispModels
+import IML.Crisp.HeytingSemantics
+import IML.Crisp.HInterpCommutation
+import IML.Crisp.HeytingSoundness
+import IML.Crisp.LFPSoundness
+import IML.Crisp.Bridge
 import IML.Examples.Kripke
 import IML.Examples.OpenSets
+import IML.Examples.ExcludedMiddle
