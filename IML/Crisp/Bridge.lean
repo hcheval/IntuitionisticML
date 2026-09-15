@@ -184,7 +184,9 @@ theorem SVarNegative.toGeneral {φ : Pattern Symbol} {n : SVarIndex} :
 end
 
 /-- Every derivation of the archived system is a derivation of the current
-system, rule for rule. -/
+system. Only the SINGLETON case has content: the archived rule is the derived
+rule `IML.Proof.singleton` of the current system, whose primitive is the
+positive `singletonStrong`. -/
 def Proof.toGeneral {Γ : Set (Pattern Symbol)} :
     ∀ {φ : Pattern Symbol}, Proof Γ φ → IML.Proof Γ φ
   | _, .assumption h => .assumption h

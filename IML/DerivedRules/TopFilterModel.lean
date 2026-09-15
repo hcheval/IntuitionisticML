@@ -1,12 +1,15 @@
-import IML.DerivedRules.Definedness
+import IML.SingletonAlt.ProofCore
 import Mathlib.Order.CompleteBooleanAlgebra
 import Mathlib.Data.ENat.Lattice
 
 /-!
-# The top-filter model: a non-standard semantics separating iML from its Heyting semantics
+# The top-filter model: a non-standard semantics for the published system
 
-All 27 rules of `IML.Proof` are sound for the following *non-standard*
-interpretation, which is therefore a tool for **underivability** proofs:
+All 27 rules of the *published* proof system — `IML.Crisp.Proof`, here in the
+form `ProofCore singletonAx` of `IML/SingletonAlt/ProofCore.lean`, with the
+negative SINGLETON `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])` — are sound for the following
+*non-standard* interpretation, which is therefore a tool for **underivability**
+proofs about that system:
 
 * patterns take values in a frame `L` (one-point carrier, so element
   variables are `⊤` and both quantifiers are the identity);
@@ -14,26 +17,39 @@ interpretation, which is therefore a tool for **underivability** proofs:
   `j u = ⊤` if `u = ⊤` and `⊥` otherwise. `j` is monotone, preserves `⊥`,
   and — when `⊤` is join-prime in `L`, e.g. `L` a chain — preserves binary
   joins, which is exactly what FRAMING, PROPAGATION∨/∃ and (via
-  two-valuedness) SINGLETON need.
+  two-valuedness) the negative SINGLETON need.
+
+The model is **not** a model of the current system `IML.Proof`, whose
+primitive is the positive `singletonStrong`: it refutes the instance
+`C₁ := □, C₂ := s ⬝ □, φ := c, ψ := ⊤`, which is `c ⇒ s ⬝ c`
+(`cm_singletonStrong`). This is the semantic side of the fact that the change
+of primitive is a genuine strengthening (`IML.strong_not_from_singleton`).
 
 Because `j` does not commute with Heyting negation (`j (~~u) = ⊤` but
 `~~(j u) = ⊥` for `⊥ < u < ⊤`), the model refutes several statements that
 *are* valid in the standard Heyting semantics of `IML.HeytingSemantics`.
-By `TopFilter.soundness` those statements are underivable, and by the
-standard soundness theorem they are consistent: the iML proof system is
-**incomplete** for its Heyting semantics. Concretely (`L := ℕ∞`, `u := 1`):
+By `TopFilter.soundness` those statements are underivable in the published
+system, and by the standard soundness theorem they are consistent: the
+published proof system is **incomplete** for its Heyting semantics.
+Concretely (`L := ℕ∞`, `u := 1`):
 
 * `nnPropagation_not_derivable`: `C[~~φ] ⇒ ~~C[φ]` is not derivable
   (this is the missing ingredient in the modal (K) rule for `~C[~·]`,
   in `◦φ ⊓ ◦ψ ⇒ ◦(φ ⊓ ψ)`, and in `~⋄~φ ⇒ □~~φ`).
 * `dne_not_derivable`: `~~φ ⇒ φ` (axiom p3) is not derivable.
 * `phi_impl_ceil_not_derivable`: with the definedness axiom `∀x.⌈x⌉`,
-  `φ ⇒ ⌈φ⌉` (thesis Lemma 3.14 / Corollary 3.1) is not derivable.
+  `φ ⇒ ⌈φ⌉` (thesis Lemma 3.14 / Corollary 3.1) is not derivable. **In the
+  current system it is** (`IML.phi_impl_ceil`); this is the main payoff of
+  the positive rule.
 * `memNegIntro_not_derivable`: with definedness, Membership¬(←)
   `~(x ∈ φ) ⇒ x ∈ ~φ` is not derivable.
 * `memEM_not_derivable`: the membership excluded middle
   `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉` (the classical step behind all of §3.2) is
   not derivable.
+
+Whether the statements other than `φ ⇒ ⌈φ⌉` are derivable in the current
+system is not settled by this file (`~~φ ⇒ φ` and `φ ⊔ ~φ` are refuted by
+ordinary chain-valued `HModel`s, but that is not formalized here).
 
 This file does not `open Pattern`: the lattice connectives of `L` and the
 pattern connectives share notation, and the low-precedence pattern
@@ -390,9 +406,10 @@ theorem fill_cases (C : AppCtx Symbol) (ρ : SVal L) :
   | right ψ C' => exact Or.inr fun X => by simp only [AppCtx.fill, tinterp]; exact j_cases _
 
 -- ─────────────────────────────────────────────────────────────
--- Soundness of the 27 rules
+-- Soundness of the 27 rules of the published system
 -- ─────────────────────────────────────────────────────────────
 
+/-- The negative SINGLETON is valid: contexts are two-valued here. -/
 theorem tvalid_singleton [Nontrivial L] {C₁ C₂ : AppCtx Symbol} {n : EVarIndex}
     {φ : Pattern Symbol} (ρ : SVal L) :
     tinterp M ρ (Pattern.neg (Pattern.conj (C₁.fill (Pattern.conj (.evar n) φ))
@@ -423,9 +440,13 @@ theorem tvalid_singleton [Nontrivial L] {C₁ C₂ : AppCtx Symbol} {n : EVarInd
         have h₂' := fill_top C₂ _ ρ hb; rw [hnx, h₁', top_himp] at h₂'
         exact absurd h₂' bot_ne_top
 
-theorem soundness [Nontrivial L] {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
-    (h : Γ ⊩ᵢ φ) (M : TModel Symbol L) (hΓ : ∀ γ ∈ Γ, TValid M γ) : TValid M φ := by
+/-- Soundness of the singleton-free core for any axiom scheme valid in `M`. -/
+theorem soundnessCore {ι : Type} {Ax : ι → Pattern Symbol}
+    {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
+    (h : Γ ⊩[Ax] φ) (M : TModel Symbol L) (hAx : ∀ i, TValid M (Ax i))
+    (hΓ : ∀ γ ∈ Γ, TValid M γ) : TValid M φ := by
   induction h with
+  | ax i => exact hAx i
   | assumption hmem => exact hΓ _ hmem
   | contractionOr =>
     intro ρ; rw [tinterp_impl_eq_top]; simp only [tinterp]; exact sup_le le_rfl le_rfl
@@ -494,7 +515,6 @@ theorem soundness [Nontrivial L] {Γ : Set (Pattern Symbol)} {φ : Pattern Symbo
     intro ρ; rw [tinterp_impl_eq_top]
     have := tinterp_impl_eq_top.mp (ih ρ); rw [tinterp_svarSubst_zero] at this
     simp only [tinterp]; exact le_sSup this
-  | singleton => intro ρ; exact tvalid_singleton ρ
   | propagationOrLeft =>
     intro ρ; rw [tinterp_impl_eq_top]; simp only [tinterp]
     rw [inf_sup_right]; exact j_sup_le M.top_prime _ _
@@ -513,6 +533,17 @@ theorem soundness [Nontrivial L] {Γ : Set (Pattern Symbol)} {φ : Pattern Symbo
   | framingRight _ ih =>
     intro ρ; rw [tinterp_impl_eq_top]; simp only [tinterp]
     exact j_mono (inf_le_inf_left _ (tinterp_impl_eq_top.mp (ih ρ)))
+
+theorem tvalid_singletonAx [Nontrivial L] (M : TModel Symbol L) :
+    ∀ i, TValid M (singletonAx Symbol i)
+  | (_, _, _, _) => fun ρ => tvalid_singleton ρ
+
+/-- **Soundness of the published system** (`ProofCore singletonAx`) for the
+top-filter interpretation. -/
+theorem soundness [Nontrivial L] {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
+    (h : Γ ⊩[singletonAx Symbol] φ) (M : TModel Symbol L)
+    (hΓ : ∀ γ ∈ Γ, TValid M γ) : TValid M φ :=
+  soundnessCore h M (tvalid_singletonAx M) hΓ
 
 -- ─────────────────────────────────────────────────────────────
 -- The countermodel over a complete chain
@@ -574,6 +605,17 @@ theorem cm_phi_impl_ceil (u : L) (hu₁ : u ≠ ⊥) (hu₂ : u ≠ ⊤) (ρ : S
   simp only [tinterp, cm_true, cm_false, top_inf_eq]
   rw [j_of_ne_top hu₂, himp_bot_of_ne_bot hu₁]
 
+/-- **The positive SINGLETON `singletonStrong` fails in `cm u`**, at the instance
+`C₁ := □`, `C₂ := s ⬝ □`, `φ := c`, `ψ := ⊤`: the premise `(x ⊓ c) ⊓ s ⬝ (x ⊓ ⊤)`
+is `u` and the conclusion `s ⬝ (x ⊓ (c ⊓ ⊤))` is `j u = ⊥`. So the top-filter
+model is not a model of the current system `IML.Proof`. -/
+theorem cm_singletonStrong (u : L) (hu₁ : u ≠ ⊥) (hu₂ : u ≠ ⊤) (ρ : SVal L) :
+    tinterp (cm u) ρ (singletonStrongAx Bool ((.hole, .right s .hole, 0, c), Pattern.top))
+      = ⊥ := by
+  simp only [singletonStrongAx, AppCtx.fill, Pattern.top, Pattern.neg, tinterp, cm_true,
+    cm_false, top_inf_eq, himp_self, inf_top_eq, j_top]
+  rw [j_of_ne_top hu₂, himp_bot_of_ne_bot hu₁]
+
 /-- Truth value of Membership¬(←) `~(x ∈ c) ⇒ x ∈ ~c` in `cm u`. -/
 theorem cm_memNegIntro (u : L) (hu₁ : u ≠ ⊥) (hu₂ : u ≠ ⊤) (ρ : SVal L) :
     tinterp (cm u) ρ
@@ -593,8 +635,11 @@ theorem cm_memEM (u : L) (hu₁ : u ≠ ⊥) (hu₂ : u ≠ ⊤) (ρ : SVal L) :
 end Counter
 
 -- ─────────────────────────────────────────────────────────────
--- Underivability results (L := ℕ∞, u := 1)
+-- Underivability results for the published system (L := ℕ∞, u := 1)
 -- ─────────────────────────────────────────────────────────────
+
+/-- The published system over `Bool` symbols: `ProofCore singletonAx`. -/
+local notation:25 Γ " ⊩₀ " φ => ProofCore (singletonAx Bool) Γ φ
 
 theorem one_ne_bot : (1 : ℕ∞) ≠ ⊥ := by decide
 theorem one_ne_top : (1 : ℕ∞) ≠ ⊤ := by decide
@@ -602,18 +647,19 @@ theorem one_ne_top : (1 : ℕ∞) ≠ ⊤ := by decide
 theorem empty_valid (u : ℕ∞) : ∀ γ ∈ (∅ : Set (Pattern Bool)), TValid (cm u) γ :=
   fun _ hγ => absurd hγ (Set.notMem_empty _)
 
-/-- `C[~~φ] ⇒ ~~C[φ]` is not derivable in iML (instance `C = s ⬝ □`, `φ = c`). -/
+/-- `C[~~φ] ⇒ ~~C[φ]` is not derivable in the published system (instance
+`C = s ⬝ □`, `φ = c`). -/
 theorem nnPropagation_not_derivable :
-    IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ
+    IsEmpty ((∅ : Set (Pattern Bool)) ⊩₀
       .impl (.app s (.neg (.neg c))) (.neg (.neg (.app s c)))) := by
   constructor; intro h
   have := soundness h (cm (1 : ℕ∞)) (empty_valid 1) (fun _ => ⊥)
   rw [cm_nnPropagation _ one_ne_bot one_ne_top] at this
   exact bot_ne_top this
 
-/-- Double-negation elimination (axiom p3) is not derivable in iML. -/
+/-- Double-negation elimination (axiom p3) is not derivable in the published system. -/
 theorem dne_not_derivable :
-    IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ .impl (.neg (.neg c)) c) := by
+    IsEmpty ((∅ : Set (Pattern Bool)) ⊩₀ .impl (.neg (.neg c)) c) := by
   constructor; intro h
   have := soundness h (cm (1 : ℕ∞)) (empty_valid 1) (fun _ => ⊥)
   rw [cm_dne _ one_ne_bot] at this
@@ -625,17 +671,20 @@ def defTheory : Set (Pattern Bool) := {.forallP (.app s x₀)}
 theorem defTheory_valid (u : ℕ∞) : ∀ γ ∈ defTheory, TValid (cm u) γ := by
   intro γ hγ; rw [defTheory, Set.mem_singleton_iff] at hγ; subst hγ; exact cm_definedness u
 
-/-- Thesis Lemma 3.14 / Corollary 3.1, `φ ⇒ ⌈φ⌉`, is not derivable from definedness. -/
+/-- Thesis Lemma 3.14 / Corollary 3.1, `φ ⇒ ⌈φ⌉`, is not derivable from
+definedness in the published system. In the current system, with the positive
+SINGLETON, it is derivable: `IML.phi_impl_ceil`. -/
 theorem phi_impl_ceil_not_derivable :
-    IsEmpty (defTheory ⊩ᵢ .impl c (.app s c)) := by
+    IsEmpty (defTheory ⊩₀ .impl c (.app s c)) := by
   constructor; intro h
   have := soundness h (cm (1 : ℕ∞)) (defTheory_valid 1) (fun _ => ⊥)
   rw [cm_phi_impl_ceil _ one_ne_bot one_ne_top] at this
   exact bot_ne_top this
 
-/-- Membership¬(←), `~(x ∈ φ) ⇒ x ∈ ~φ`, is not derivable from definedness. -/
+/-- Membership¬(←), `~(x ∈ φ) ⇒ x ∈ ~φ`, is not derivable from definedness in
+the published system. -/
 theorem memNegIntro_not_derivable :
-    IsEmpty (defTheory ⊩ᵢ
+    IsEmpty (defTheory ⊩₀
       .impl (.neg (.app s (.conj x₀ c))) (.app s (.conj x₀ (.neg c)))) := by
   constructor; intro h
   have := soundness h (cm (1 : ℕ∞)) (defTheory_valid 1) (fun _ => ⊥)
@@ -648,8 +697,8 @@ theorem cm_em {L : Type*} [CompleteLinearOrder L] (u : L) (hu₁ : u ≠ ⊥) (�
   simp only [Pattern.neg, tinterp, cm_false]
   rw [himp_bot_of_ne_bot hu₁, sup_bot_eq]
 
-/-- Excluded middle `c ⊔ ~c` is not derivable from definedness. -/
-theorem em_not_derivable : IsEmpty (defTheory ⊩ᵢ .disj c (.neg c)) := by
+/-- Excluded middle `c ⊔ ~c` is not derivable from definedness in the published system. -/
+theorem em_not_derivable : IsEmpty (defTheory ⊩₀ .disj c (.neg c)) := by
   constructor; intro h
   have := soundness h (cm (1 : ℕ∞)) (defTheory_valid 1) (fun _ => ⊥)
   rw [cm_em _ one_ne_bot] at this
@@ -657,23 +706,25 @@ theorem em_not_derivable : IsEmpty (defTheory ⊩ᵢ .disj c (.neg c)) := by
 
 /-- The deduction theorem of the thesis (Theorem 3.3 / Theorem 4.2), in the
 form "`Γ ∪ {ψ} ⊢ φ` implies `Γ ⊢ ⌊ψ⌋ ⇒ φ`" with `⌊ψ⌋ := ~⌈~ψ⌉`, is **false**
-for iML: applied to `ψ = φ = c ⊔ ~c` it would yield `⊢ ⌊c ⊔ ~c⌋ ⇒ c ⊔ ~c`,
-but `⌊c ⊔ ~c⌋` is derivable (it is the double negation of excluded middle,
-pushed through `⌈·⌉` by framing and ⊥-propagation), so excluded middle
-would be derivable. -/
+for the published system: applied to `ψ = φ = c ⊔ ~c` it would yield
+`⊢ ⌊c ⊔ ~c⌋ ⇒ c ⊔ ~c`, but `⌊c ⊔ ~c⌋` is derivable (it is the double negation
+of excluded middle, pushed through `⌈·⌉` by framing and ⊥-propagation), so
+excluded middle would be derivable. -/
 theorem deductionTheorem_fails :
-    ¬ ∀ (ψ φ : Pattern Bool), Nonempty ((defTheory ∪ {ψ}) ⊩ᵢ φ) →
-        Nonempty (defTheory ⊩ᵢ .impl (.neg (.app s (.neg ψ))) φ) := by
+    ¬ ∀ (ψ φ : Pattern Bool), Nonempty ((defTheory ∪ {ψ}) ⊩₀ φ) →
+        Nonempty (defTheory ⊩₀ .impl (.neg (.app s (.neg ψ))) φ) := by
   intro hDT
   obtain ⟨h⟩ := hDT (.disj c (.neg c)) (.disj c (.neg c))
     ⟨.assumption (Set.mem_union_right _ (Set.mem_singleton _))⟩
-  have htot : defTheory ⊩ᵢ .neg (.app s (.neg (.disj c (.neg c)))) :=
-    .syllogism (.framingRight nnExcludedMiddle) (ctxBot (.right s .hole))
+  have htot : defTheory ⊩₀ .neg (.app s (.neg (.disj c (.neg c)))) :=
+    .syllogism (.framingRight ProofCore.nnLem)
+      (ProofCore.botProp_of_singleton ProofCore.hasSingleton_of_scheme (.right s .hole))
   exact em_not_derivable.false (.mp h htot)
 
-/-- The membership excluded middle is not derivable from definedness. -/
+/-- The membership excluded middle is not derivable from definedness in the
+published system. -/
 theorem memEM_not_derivable :
-    IsEmpty (defTheory ⊩ᵢ
+    IsEmpty (defTheory ⊩₀
       .impl (.app s x₀) (.disj (.app s (.conj x₀ c)) (.app s (.conj x₀ (.neg c))))) := by
   constructor; intro h
   have := soundness h (cm (1 : ℕ∞)) (defTheory_valid 1) (fun _ => ⊥)

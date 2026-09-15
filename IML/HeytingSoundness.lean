@@ -581,8 +581,8 @@ theorem soundness {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
     exact fun _ _ _ _ _ m => hvalid_postFixpoint hpos m
   | park _ ih =>
     exact fun L _ M hΓ ρ m => hvalid_park (ih L M hΓ ρ) m
-  | singleton =>
-    exact fun _ _ _ _ _ m => hvalid_singleton m
+  | singletonStrong =>
+    exact fun _ _ _ _ _ m => hvalid_singletonStrong m
   | propagationOrLeft =>
     exact fun _ _ _ _ _ m => hvalid_propagationOrLeft m
   | propagationOrRight =>

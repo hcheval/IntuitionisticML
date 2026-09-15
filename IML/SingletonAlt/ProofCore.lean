@@ -3,28 +3,33 @@ import IML.SingletonAlt.Kernel
 /-!
 # iML with a pluggable singleton axiom
 
-`ProofCore Ax Γ φ` is the proof system of `IML/Proof.lean` with the `singleton` constructor
+`ProofCore Ax Γ φ` is the proof system of `IML/Proof.lean` with the singleton constructor
 removed and replaced by an arbitrary axiom scheme `Ax : ι → Pattern Symbol` (a family of
 patterns indexed by a type of instances). This lets us compare
 
-* `singletonAx`       — the existing negative rule `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])`
-* `singletonAltAx`    — the proposed positive rule `C₁[x ⊓ φ] ⊓ C₂[x] ⇒ C₂[x ⊓ φ]`
-* `singletonStrongAx` — the strengthened rule `C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ (φ ⊓ ψ)]`
+* `singletonAx`       — the negative rule `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])` of the published
+                        system (archived as `IML.Crisp.Proof`)
+* `singletonAltAx`    — the weaker positive rule `C₁[x ⊓ φ] ⊓ C₂[x] ⇒ C₂[x ⊓ φ]`
+* `singletonStrongAx` — the positive rule `C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ (φ ⊓ ψ)]`, now
+                        the primitive `Proof.singletonStrong` of the current system
 
-`ProofCore singletonAx` is literally the existing system (`Proof.toCore`, `ProofCore.toProof`),
-and `ProofAlt := ProofCore singletonAltAx` is the proposed one.
+`ProofCore singletonStrongAx` is literally the current system (`Proof.toCore`,
+`ProofCore.toProof`); `ProofCore singletonAx` is the published system, rule for rule; and
+`ProofAlt := ProofCore singletonAltAx` is the weaker positive variant.
 
 ## Derivability results (all sorry-free, all intuitionistic unless a `lem` hypothesis is taken)
 
 * `botProp_of_alt`, `botProp_of_singleton` — propagation of `⊥`, `C[⊥] ⇒ ⊥`, is derivable
   from either singleton axiom (via `existence` + `existGen`); it is not a gap in iML.
-* `alt_of_strong`, `singleton_of_strong` — `singletonStrong` yields both other rules.
+* `alt_of_strong`, `singleton_of_strong` — `singletonStrong` yields both other rules. (These
+  are the derivations behind `Proof.singletonAlt` and `Proof.singleton` in `IML/Proof.lean`.)
 * `alt_of_singleton_lem`, `strong_of_singleton_lem` — with excluded middle, `singleton`
   yields both positive rules; so classically all three are interderivable-or-stronger in the
   order `singleton ⊣⊢ strong ⊢ alt`.
 
-The non-derivability results (`alt ⊬ singleton` even classically; `singleton ⊬ alt`
-intuitionistically) are in `Countermodels.lean`.
+The non-derivability results (`alt ⊬ singleton` even classically; `singleton ⊬ alt`, hence
+`singleton ⊬ strong`, intuitionistically) are in `Countermodels.lean`. The last one is what
+makes the change of primitive a genuine strengthening of the published system.
 -/
 
 namespace IML
@@ -35,8 +40,8 @@ open Pattern
 -- The core system
 -- ─────────────────────────────────────────────────────────────
 
-/-- iML minus `singleton`, plus an axiom scheme `Ax`. Every constructor other than `ax`
-is copied verbatim from `Proof`. -/
+/-- iML minus its singleton rule, plus an axiom scheme `Ax`. Every constructor other than
+`ax` is copied verbatim from `Proof`. -/
 inductive ProofCore {Symbol : Type} {ι : Type} (Ax : ι → Pattern Symbol)
     (Γ : Set (Pattern Symbol)) : Pattern Symbol → Type where
   | ax (i : ι) : ProofCore Ax Γ (Ax i)
@@ -100,15 +105,16 @@ variable (Symbol : Type)
 /-- Instances of a singleton-shaped scheme: two contexts, a variable, a pattern. -/
 abbrev SingletonInst := AppCtx Symbol × AppCtx Symbol × EVarIndex × Pattern Symbol
 
-/-- The existing negative rule `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])`. -/
+/-- The negative rule `~(C₁[x ⊓ φ] ⊓ C₂[x ⊓ ~φ])` of the published system. -/
 def singletonAx : SingletonInst Symbol → Pattern Symbol
   | (C₁, C₂, n, φ) => ~(C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n ⊓ ~φ))
 
-/-- The proposed positive rule `C₁[x ⊓ φ] ⊓ C₂[x] ⇒ C₂[x ⊓ φ]`. -/
+/-- The weaker positive rule `C₁[x ⊓ φ] ⊓ C₂[x] ⇒ C₂[x ⊓ φ]`. -/
 def singletonAltAx : SingletonInst Symbol → Pattern Symbol
   | (C₁, C₂, n, φ) => C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n) ⇒ C₂.fill (.evar n ⊓ φ)
 
-/-- The strengthened positive rule `C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ (φ ⊓ ψ)]`. -/
+/-- The positive rule `C₁[x ⊓ φ] ⊓ C₂[x ⊓ ψ] ⇒ C₂[x ⊓ (φ ⊓ ψ)]`, the primitive
+`Proof.singletonStrong` of the current system. -/
 def singletonStrongAx : SingletonInst Symbol × Pattern Symbol → Pattern Symbol
   | ((C₁, C₂, n, φ), ψ) =>
       C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n ⊓ ψ) ⇒ C₂.fill (.evar n ⊓ (φ ⊓ ψ))
@@ -125,18 +131,19 @@ end Schemes
 def axUnion {Symbol : Type} {ι κ : Type} (A : ι → Pattern Symbol) (B : κ → Pattern Symbol) :
     ι ⊕ κ → Pattern Symbol := Sum.elim A B
 
-/-- The proposed system: iML with `singleton` replaced by `singletonAlt`. -/
+/-- iML with the singleton rule replaced by the weaker `singletonAlt`. -/
 abbrev ProofAlt {Symbol : Type} (Γ : Set (Pattern Symbol)) (φ : Pattern Symbol) : Type :=
   ProofCore (singletonAltAx Symbol) Γ φ
 
 -- ─────────────────────────────────────────────────────────────
--- `ProofCore singletonAx` is exactly the existing `Proof`
+-- `ProofCore singletonStrongAx` is exactly the current `Proof`
 -- ─────────────────────────────────────────────────────────────
 
 section Equivalence
 variable {Symbol : Type} {Γ : Set (Pattern Symbol)}
 
-def Proof.toCore : ∀ {φ : Pattern Symbol}, Proof Γ φ → ProofCore (singletonAx Symbol) Γ φ
+def Proof.toCore :
+    ∀ {φ : Pattern Symbol}, Proof Γ φ → ProofCore (singletonStrongAx Symbol) Γ φ
   | _, .assumption h => .assumption h
   | _, .contractionOr => .contractionOr
   | _, .contractionAnd => .contractionAnd
@@ -160,7 +167,8 @@ def Proof.toCore : ∀ {φ : Pattern Symbol}, Proof Γ φ → ProofCore (singlet
   | _, .knasterTarski h => .knasterTarski h.toCore
   | _, .postFixpoint hp => .postFixpoint hp
   | _, .park h => .park h.toCore
-  | _, .singleton (C₁ := C₁) (C₂ := C₂) (n := n) (φ := φ) => .ax (C₁, C₂, n, φ)
+  | _, .singletonStrong (C₁ := C₁) (C₂ := C₂) (n := n) (φ := φ) (ψ := ψ) =>
+    .ax ((C₁, C₂, n, φ), ψ)
   | _, .propagationOrLeft => .propagationOrLeft
   | _, .propagationOrRight => .propagationOrRight
   | _, .propagationExistLeft => .propagationExistLeft
@@ -168,8 +176,9 @@ def Proof.toCore : ∀ {φ : Pattern Symbol}, Proof Γ φ → ProofCore (singlet
   | _, .framingLeft h => .framingLeft h.toCore
   | _, .framingRight h => .framingRight h.toCore
 
-def ProofCore.toProof : ∀ {φ : Pattern Symbol}, ProofCore (singletonAx Symbol) Γ φ → Proof Γ φ
-  | _, .ax (_, _, _, _) => .singleton
+def ProofCore.toProof :
+    ∀ {φ : Pattern Symbol}, ProofCore (singletonStrongAx Symbol) Γ φ → Proof Γ φ
+  | _, .ax ((_, _, _, _), _) => .singletonStrong
   | _, .assumption h => .assumption h
   | _, .contractionOr => .contractionOr
   | _, .contractionAnd => .contractionAnd
@@ -274,7 +283,7 @@ theorem hvalid_singletonStrongAx : ∀ i, HValid M (singletonStrongAx Symbol i)
 
 end AxValidity
 
-/-- **Soundness of the proposed system** `ProofAlt` over every `HModel`. -/
+/-- **Soundness of the weaker system** `ProofAlt` over every `HModel`. -/
 theorem soundnessAlt {Symbol : Type} {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
     (h : ProofAlt Γ φ) :
     ∀ (L : Type*) [Order.Frame L] (M : HModel Symbol L),
@@ -321,6 +330,16 @@ def distrib : Γ ⊩[Ax] φ ⊓ (ψ ⊔ χ) ⇒ (φ ⊓ ψ) ⊔ (φ ⊓ χ) :=
 def negElim : Γ ⊩[Ax] φ ⊓ ~φ ⇒ ⊥ₘ :=
   syllogism permutationAnd (importation (idP (φ ⇒ ⊥ₘ)))
 
+/-- `~~(φ ⊔ ~φ)`: excluded middle holds up to double negation. -/
+def nnLem : Γ ⊩[Ax] ~~(φ ⊔ ~φ) :=
+  -- ~(φ ⊔ ~φ) ⇒ ~φ
+  let h₁ : Γ ⊩[Ax] ~(φ ⊔ ~φ) ⇒ ~φ :=
+    exportation (syllogism (andMonoR weakeningOr) (importation (idP (~(φ ⊔ ~φ)))))
+  -- ~(φ ⊔ ~φ) ⇒ φ ⊔ ~φ
+  let h₂ : Γ ⊩[Ax] ~(φ ⊔ ~φ) ⇒ φ ⊔ ~φ :=
+    syllogism h₁ (syllogism weakeningOr permutationOr)
+  syllogism (andIntro (idP _) h₂) (importation (idP (~(φ ⊔ ~φ))))
+
 /-- `φ ⇒ ⊤ₘ` -/
 def topIntro : Γ ⊩[Ax] φ ⇒ ⊤ₘ :=
   exportation (weakeningAnd' (φ := φ) (ψ := ⊥ₘ))
@@ -348,28 +367,8 @@ def ctxOr (C : AppCtx Symbol) : Γ ⊩[Ax] C.fill (φ ⊔ ψ) ⇒ C.fill φ ⊔ 
 end ProofCore
 
 -- ─────────────────────────────────────────────────────────────
--- Lifting a context (needed to bind the variable in ⊥-propagation)
--- ─────────────────────────────────────────────────────────────
-
-/-- Lift the free element variables of a context. -/
-def AppCtx.lift {Symbol : Type} (k : Nat) : AppCtx Symbol → AppCtx Symbol
-  | .hole => .hole
-  | .left C ψ => .left (AppCtx.lift k C) (evarLiftFrom k ψ)
-  | .right ψ C => .right (evarLiftFrom k ψ) (AppCtx.lift k C)
-
-theorem AppCtx.fill_lift {Symbol : Type} (k : Nat) (C : AppCtx Symbol) (φ : Pattern Symbol) :
-    evarLiftFrom k (C.fill φ) = (C.lift k).fill (evarLiftFrom k φ) := by
-  induction C with
-  | hole => rfl
-  | left C ψ ih => simp only [AppCtx.fill, AppCtx.lift, evarLiftFrom, ih]
-  | right ψ C ih => simp only [AppCtx.fill, AppCtx.lift, evarLiftFrom, ih]
-
-theorem evarLift_ctxBot_impl_bot {Symbol : Type} (C : AppCtx Symbol) :
-    evarLift (C.fill ⊥ₘ ⇒ ⊥ₘ) = ((C.lift 0).fill ⊥ₘ ⇒ ⊥ₘ) := by
-  simp only [evarLift, evarLiftFrom, AppCtx.fill_lift]
-
--- ─────────────────────────────────────────────────────────────
--- Derivability results
+-- Derivability results (the context lift `AppCtx.lift`, needed to bind the
+-- variable in ⊥-propagation, is in `IML/Proof.lean`)
 -- ─────────────────────────────────────────────────────────────
 
 namespace ProofCore
@@ -415,7 +414,7 @@ def botProp_of_alt (alt : HasAlt Ax Γ) (C : AppCtx Symbol) : Γ ⊩[Ax] C.fill 
     existGen (by rw [evarLift_ctxBot_impl_bot]; exact h₃)
   mp h₄ existence
 
-/-- **Propagation of `⊥` is derivable from the existing `singleton` rule** as well, by the
+/-- **Propagation of `⊥` is derivable from the negative `singleton` rule** as well, by the
 same route (instance `C₂ := hole`, `φ := ⊥`). So iML never lacked `C[⊥] ⇒ ⊥`. -/
 def botProp_of_singleton (sg : HasSingleton Ax Γ) (C : AppCtx Symbol) :
     Γ ⊩[Ax] C.fill ⊥ₘ ⇒ ⊥ₘ :=
