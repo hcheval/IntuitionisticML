@@ -642,6 +642,35 @@ theorem memNegIntro_not_derivable :
   rw [cm_memNegIntro _ one_ne_bot one_ne_top] at this
   exact bot_ne_top this
 
+/-- Truth value of `c ⊔ ~c` in `cm u`. -/
+theorem cm_em {L : Type*} [CompleteLinearOrder L] (u : L) (hu₁ : u ≠ ⊥) (ρ : SVal L) :
+    tinterp (cm u) ρ (.disj c (.neg c)) = u := by
+  simp only [Pattern.neg, tinterp, cm_false]
+  rw [himp_bot_of_ne_bot hu₁, sup_bot_eq]
+
+/-- Excluded middle `c ⊔ ~c` is not derivable from definedness. -/
+theorem em_not_derivable : IsEmpty (defTheory ⊩ᵢ .disj c (.neg c)) := by
+  constructor; intro h
+  have := soundness h (cm (1 : ℕ∞)) (defTheory_valid 1) (fun _ => ⊥)
+  rw [cm_em _ one_ne_bot] at this
+  exact one_ne_top this
+
+/-- The deduction theorem of the thesis (Theorem 3.3 / Theorem 4.2), in the
+form "`Γ ∪ {ψ} ⊢ φ` implies `Γ ⊢ ⌊ψ⌋ ⇒ φ`" with `⌊ψ⌋ := ~⌈~ψ⌉`, is **false**
+for iML: applied to `ψ = φ = c ⊔ ~c` it would yield `⊢ ⌊c ⊔ ~c⌋ ⇒ c ⊔ ~c`,
+but `⌊c ⊔ ~c⌋` is derivable (it is the double negation of excluded middle,
+pushed through `⌈·⌉` by framing and ⊥-propagation), so excluded middle
+would be derivable. -/
+theorem deductionTheorem_fails :
+    ¬ ∀ (ψ φ : Pattern Bool), Nonempty ((defTheory ∪ {ψ}) ⊩ᵢ φ) →
+        Nonempty (defTheory ⊩ᵢ .impl (.neg (.app s (.neg ψ))) φ) := by
+  intro hDT
+  obtain ⟨h⟩ := hDT (.disj c (.neg c)) (.disj c (.neg c))
+    ⟨.assumption (Set.mem_union_right _ (Set.mem_singleton _))⟩
+  have htot : defTheory ⊩ᵢ .neg (.app s (.neg (.disj c (.neg c)))) :=
+    .syllogism (.framingRight nnExcludedMiddle) (ctxBot (.right s .hole))
+  exact em_not_derivable.false (.mp h htot)
+
 /-- The membership excluded middle is not derivable from definedness. -/
 theorem memEM_not_derivable :
     IsEmpty (defTheory ⊩ᵢ

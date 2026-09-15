@@ -16,7 +16,7 @@ Umbrella module for the survey of Chen's thesis derivations in iML
 * `FOL` — quantifier rules, substitution–lifting cancellation
 * `Context` — framing, propagation of `⊥`/`⊔`/`∃` through application
   contexts, the dual box `~C[~·]` and its (N) rule and converse Barcan
-* `Fixpoint` — μ/ν pre-/post-fixpoint, induction/coinduction,
+* `Fixpoint` — μ and ν pre- and post-fixpoint rules, induction/coinduction,
   monotonicity, `μX.X ⟺ ⊥`
 * `Definedness` — definedness, membership, totality (§3.2 of the thesis),
   and the `SingletonPos` principle
