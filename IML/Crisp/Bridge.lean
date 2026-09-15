@@ -15,12 +15,14 @@ This file proves that the two agree exactly:
   (every predicate is extensional for crisp equality, `crisp_ext`);
 * `hinterp_toGeneral`: the two interpretations coincide on every pattern;
 * `hvalid_iff`: the two notions of validity coincide;
+* `Proof.toGeneral`: every derivation in the archived proof system
+  (`IML.Crisp.Proof`) is a derivation in the current one (`IML.Proof`);
 * `soundness_of_general`: `IML.Crisp.soundness` is the crisp instance of
   `IML.soundness`.
 
-The only case with content is `μ`/`ν`: the general fixpoints range over
-*extensional* pre- and post-fixpoints, the crisp ones over all predicates, and
-`crisp_ext` shows the two index sets are the same.
+The only case of `hinterp_toGeneral` with content is `μ`/`ν`: the general
+fixpoints range over *extensional* pre- and post-fixpoints, the crisp ones over
+all predicates, and `crisp_ext` shows the two index sets are the same.
 -/
 
 namespace IML.Crisp
@@ -131,14 +133,106 @@ theorem hvalid_iff (M : HModel Symbol L) (φ : Pattern Symbol) :
   · intro h ρ m
     exact (hinterp_toGeneral M ρ φ m).trans (h _ m)
 
-/-- `IML.Crisp.soundness` as the crisp instance of `IML.soundness`. -/
+-- ─────────────────────────────────────────────────────────────
+-- The archived proof system embeds into the current one
+-- ─────────────────────────────────────────────────────────────
+
+/-- Application contexts of the archived system as contexts of the current one. -/
+def AppCtx.toGeneral : AppCtx Symbol → IML.AppCtx Symbol
+  | .hole => .hole
+  | .left C ψ => .left C.toGeneral ψ
+  | .right ψ C => .right ψ C.toGeneral
+
+theorem AppCtx.toGeneral_fill (C : AppCtx Symbol) (φ : Pattern Symbol) :
+    C.toGeneral.fill φ = C.fill φ := by
+  induction C with
+  | hole => rfl
+  | left C ψ ih => simp only [AppCtx.toGeneral, AppCtx.fill, IML.AppCtx.fill, ih]
+  | right ψ C ih => simp only [AppCtx.toGeneral, AppCtx.fill, IML.AppCtx.fill, ih]
+
+mutual
+theorem SVarPositive.toGeneral {φ : Pattern Symbol} {n : SVarIndex} :
+    SVarPositive φ n → IML.SVarPositive φ n
+  | .evar => .evar
+  | .svar => .svar
+  | .svarNe h => .svarNe h
+  | .symbol => .symbol
+  | .app h₁ h₂ => .app h₁.toGeneral h₂.toGeneral
+  | .bot => .bot
+  | .impl h₁ h₂ => .impl h₁.toGeneral h₂.toGeneral
+  | .conj h₁ h₂ => .conj h₁.toGeneral h₂.toGeneral
+  | .disj h₁ h₂ => .disj h₁.toGeneral h₂.toGeneral
+  | .exist h => .exist h.toGeneral
+  | .forallP h => .forallP h.toGeneral
+  | .mu h => .mu h.toGeneral
+  | .nu h => .nu h.toGeneral
+
+theorem SVarNegative.toGeneral {φ : Pattern Symbol} {n : SVarIndex} :
+    SVarNegative φ n → IML.SVarNegative φ n
+  | .evar => .evar
+  | .svarNe h => .svarNe h
+  | .symbol => .symbol
+  | .app h₁ h₂ => .app h₁.toGeneral h₂.toGeneral
+  | .bot => .bot
+  | .impl h₁ h₂ => .impl h₁.toGeneral h₂.toGeneral
+  | .conj h₁ h₂ => .conj h₁.toGeneral h₂.toGeneral
+  | .disj h₁ h₂ => .disj h₁.toGeneral h₂.toGeneral
+  | .exist h => .exist h.toGeneral
+  | .forallP h => .forallP h.toGeneral
+  | .mu h => .mu h.toGeneral
+  | .nu h => .nu h.toGeneral
+end
+
+/-- Every derivation of the archived system is a derivation of the current
+system, rule for rule. -/
+def Proof.toGeneral {Γ : Set (Pattern Symbol)} :
+    ∀ {φ : Pattern Symbol}, Proof Γ φ → IML.Proof Γ φ
+  | _, .assumption h => .assumption h
+  | _, .contractionOr => .contractionOr
+  | _, .contractionAnd => .contractionAnd
+  | _, .weakeningOr => .weakeningOr
+  | _, .weakeningAnd => .weakeningAnd
+  | _, .permutationOr => .permutationOr
+  | _, .permutationAnd => .permutationAnd
+  | _, .mp h₁ h₂ => .mp h₁.toGeneral h₂.toGeneral
+  | _, .botElim => .botElim
+  | _, .syllogism h₁ h₂ => .syllogism h₁.toGeneral h₂.toGeneral
+  | _, .exportation h => .exportation h.toGeneral
+  | _, .importation h => .importation h.toGeneral
+  | _, .expansion h => .expansion h.toGeneral
+  | _, .existQuant => .existQuant
+  | _, .existGen h => .existGen h.toGeneral
+  | _, .forallQuant => .forallQuant
+  | _, .forallGen h => .forallGen h.toGeneral
+  | _, .existence => .existence
+  | _, .svSubst h => .svSubst h.toGeneral
+  | _, .preFixpoint hp => .preFixpoint hp.toGeneral
+  | _, .knasterTarski h => .knasterTarski h.toGeneral
+  | _, .postFixpoint hp => .postFixpoint hp.toGeneral
+  | _, .park h => .park h.toGeneral
+  | _, .singleton (C₁ := C₁) (C₂ := C₂) (n := n) (φ := φ) => by
+    rw [← AppCtx.toGeneral_fill C₁, ← AppCtx.toGeneral_fill C₂]
+    exact .singleton (C₁ := C₁.toGeneral) (C₂ := C₂.toGeneral) (n := n) (φ := φ)
+  | _, .propagationOrLeft => .propagationOrLeft
+  | _, .propagationOrRight => .propagationOrRight
+  | _, .propagationExistLeft => .propagationExistLeft
+  | _, .propagationExistRight => .propagationExistRight
+  | _, .framingLeft h => .framingLeft h.toGeneral
+  | _, .framingRight h => .framingRight h.toGeneral
+
+-- ─────────────────────────────────────────────────────────────
+-- Validity and soundness agree
+-- ─────────────────────────────────────────────────────────────
+
+/-- `IML.Crisp.soundness` as the crisp instance of `IML.soundness`, through
+the embedding `Proof.toGeneral` of the archived proof system. -/
 theorem soundness_of_general {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
-    (h : Γ ⊩ᵢ φ) :
+    (h : Proof Γ φ) :
     ∀ (L : Type*) [Order.Frame L] (M : HModel Symbol L),
     (∀ γ ∈ Γ, HValid M γ) → HValid M φ := by
   intro L _ M hΓ
   exact (hvalid_iff M φ).mpr
-    (IML.soundness h L M.toGeneral fun γ hγ => (hvalid_iff M γ).mp (hΓ γ hγ))
+    (IML.soundness h.toGeneral L M.toGeneral fun γ hγ => (hvalid_iff M γ).mp (hΓ γ hγ))
 
 #print axioms hinterp_toGeneral
 #print axioms soundness_of_general

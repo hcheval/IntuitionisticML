@@ -6,6 +6,7 @@ import IML.HInterpCommutation
 import IML.HeytingSoundness
 import IML.LFPSoundness
 import IML.CrispModels
+import IML.Crisp.Proof
 import IML.Crisp.HeytingSemantics
 import IML.Crisp.HInterpCommutation
 import IML.Crisp.HeytingSoundness

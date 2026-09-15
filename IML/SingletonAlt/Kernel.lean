@@ -51,13 +51,13 @@ def K_hole (M : HModel Symbol L) (a m : M.Carrier) : L :=
 
 /-- The kernel of an application context: `K_C a m` measures "`a` at the hole of `C`
 yields `m`". -/
-def AppCtx.kernel (M : HModel Symbol L) (ρ : HValuation M) :
+def Crisp.AppCtx.kernel (M : HModel Symbol L) (ρ : HValuation M) :
     AppCtx Symbol → M.Carrier → M.Carrier → L
   | .hole => fun a m => K_hole M a m
   | .left C ψ => fun a m =>
-      ⨆ b, ⨆ c, AppCtx.kernel M ρ C a b ⊓ hinterp M ρ ψ c ⊓ M.appInterp b c m
+      ⨆ b, ⨆ c, Crisp.AppCtx.kernel M ρ C a b ⊓ hinterp M ρ ψ c ⊓ M.appInterp b c m
   | .right ψ C => fun a m =>
-      ⨆ b, ⨆ c, hinterp M ρ ψ b ⊓ AppCtx.kernel M ρ C a c ⊓ M.appInterp b c m
+      ⨆ b, ⨆ c, hinterp M ρ ψ b ⊓ Crisp.AppCtx.kernel M ρ C a c ⊓ M.appInterp b c m
 
 theorem iSup_inf_K_hole (X : M.Carrier → L) (m : M.Carrier) :
     ⨆ a, X a ⊓ K_hole M a m = X m := by
@@ -73,9 +73,9 @@ theorem iSup_inf_K_hole (X : M.Carrier → L) (m : M.Carrier) :
 theorem hinterp_fill (C : AppCtx Symbol) (X : Pattern Symbol) (m : M.Carrier) :
     hinterp M ρ (C.fill X) m = ⨆ a, hinterp M ρ X a ⊓ C.kernel M ρ a m := by
   induction C generalizing m with
-  | hole => simp only [AppCtx.fill, AppCtx.kernel]; rw [iSup_inf_K_hole]
+  | hole => simp only [AppCtx.fill, Crisp.AppCtx.kernel]; rw [iSup_inf_K_hole]
   | left C ψ ih =>
-    simp only [AppCtx.fill, AppCtx.kernel, hinterp_app]
+    simp only [AppCtx.fill, Crisp.AppCtx.kernel, hinterp_app]
     apply le_antisymm
     · apply iSup_le; intro b; apply iSup_le; intro c
       rw [ih b, iSup_inf_eq, iSup_inf_eq]
@@ -92,7 +92,7 @@ theorem hinterp_fill (C : AppCtx Symbol) (X : Pattern Symbol) (m : M.Carrier) :
       apply le_iSup_of_le a
       exact le_of_eq (by simp only [inf_assoc])
   | right ψ C ih =>
-    simp only [AppCtx.fill, AppCtx.kernel, hinterp_app]
+    simp only [AppCtx.fill, Crisp.AppCtx.kernel, hinterp_app]
     apply le_antisymm
     · apply iSup_le; intro b; apply iSup_le; intro c
       rw [ih c, inf_iSup_eq, iSup_inf_eq]

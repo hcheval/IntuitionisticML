@@ -38,7 +38,7 @@ middle: `Prop`-valued models make `δ = ¬¬ = id`.
 
 namespace IML
 
-open Pattern
+open Pattern Crisp
 
 -- ═════════════════════════════════════════════════════════════
 -- Model A

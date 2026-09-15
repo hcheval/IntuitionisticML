@@ -1,4 +1,4 @@
-import IML.Proof
+import IML.Crisp.Proof
 import Mathlib.Order.CompleteBooleanAlgebra
 import Mathlib.Order.FixedPoints
 

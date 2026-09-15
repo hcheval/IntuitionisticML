@@ -27,7 +27,7 @@ set_option Elab.async false
 
 namespace IML
 
-open Pattern
+open Pattern Crisp
 
 -- ─────────────────────────────────────────────────────────────
 -- Models and valuations
