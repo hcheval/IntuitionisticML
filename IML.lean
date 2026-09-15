@@ -11,6 +11,8 @@ import IML.Crisp.HInterpCommutation
 import IML.Crisp.HeytingSoundness
 import IML.Crisp.LFPSoundness
 import IML.Crisp.Bridge
+import IML.DerivedRules
+import IML.SingletonAlt
 import IML.Examples.Kripke
 import IML.Examples.OpenSets
 import IML.Examples.ExcludedMiddle
