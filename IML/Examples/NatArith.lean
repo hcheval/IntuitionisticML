@@ -252,9 +252,9 @@ equality* (not merely as the pointwise `succ n ⟺ w`, which is what
 
 (`IML.IsPred`), sound in every Heyting model (`⌊θ⌋ⁱ` has the same value at
 every point) but not derived from the rules of iML. The class `HasPredProp`
-assumes it, together with its `⌈·⌉` counterpart, as an axiom scheme in `Γ`;
-associativity is proved relative to it. Everything else in the proof is the
-same machinery as `addZeroLeft`.
+(in `IML.Theories.Nat`) assumes it, together with its `⌈·⌉` counterpart, as
+an axiom scheme in `Γ`; associativity is proved relative to it. Everything
+else in the proof is the same machinery as `addZeroLeft`.
 -/
 
 section Assoc

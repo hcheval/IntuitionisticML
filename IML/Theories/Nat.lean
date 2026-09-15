@@ -44,20 +44,28 @@ the rules of `IML.Proof`; nothing is assumed about models.
 
 ## Decidability of equality
 
-Is `x =ⁱ y ⊔ ¬(x =ⁱ y)` derivable for naturals `x`, `y`? What is derived
-here is the special case `y := zero` (`zeroEqDecidable`), from the case
-analysis: in the successor case `zero =ⁱ x =ⁱ succ m` contradicts
-no-confusion. The general statement would be proved, as in Heyting
-arithmetic, by induction on `y` with the predicate
-`∀x. x ∈ nat ⇒ (y =ⁱ x) ⊔ ¬(y =ⁱ x)`; the successor step needs, in the
-positive branch `y =ⁱ k`, the *internal* congruence
-`(y =ⁱ k) ⇒ (succ y =ⁱ succ k)`, which is again the predicate-propagation
-principle (`IML.IsPred`, see `IML.Examples.NatArith`). So the obstacle is
-not excluded middle but the fact that iML's rules do not let a positive
-equality enter an application context as an equality. Note also that
-`x =ⁱ y ⊔ ¬(x =ⁱ y)` is *valid in every Heyting model* for element
-variables `x`, `y`, because element variables denote crisp points; hence
-it cannot be refuted by a Heyting countermodel either.
+Is `x =ⁱ y ⊔ ¬(x =ⁱ y)` derivable for naturals `x`, `y`?
+
+* The special case `y := zero` is derived outright (`zeroEqDecidable`, from
+  `IsNatTheoryPos`): by case analysis, in the successor case
+  `zero =ⁱ x =ⁱ succ m` contradicts no-confusion.
+* The general statement is proved as in Heyting arithmetic, by induction on
+  `y` with the predicate `∀x. x ∈ nat ⇒ (y =ⁱ x) ⊔ ¬(y =ⁱ x)`
+  (`natEqDecidableSet`, `natEqDecidable`). The successor step needs, in the
+  branch `y =ⁱ k`, the *internal* congruence `(y =ⁱ k) ⇒ (succ y =ⁱ succ k)`
+  (`eqI_congr_succ`), and carrying the predicate through the application
+  context `succ ⬝ □` needs `¬(y =ⁱ x)` and `x ∈ nat` to enter contexts. Both
+  amount to the *predicate-propagation* principle `θ ⇒ ⌊θ⌋ⁱ` for
+  `θ = ⌈φ⌉, ⌊φ⌋ⁱ` (`IML.IsPred`): sound in every Heyting model, not derived
+  from the rules of iML. It is assumed as the axiom scheme `HasPredProp`, and
+  decidability is proved relative to it.
+
+So the obstacle to decidable equality is not excluded middle — the proof is
+the constructive double induction — but the fact that iML's rules do not
+let a positive equality enter an application context *as an equality*. Note
+also that `x =ⁱ y ⊔ ¬(x =ⁱ y)` is *valid in every Heyting model* for
+element variables `x`, `y`, because element variables denote crisp points;
+hence it cannot be refuted by a Heyting countermodel either.
 -/
 
 namespace IML
@@ -545,11 +553,13 @@ def decStep : Γ ⊩ᵢ succ_ ⬝ decSet ⇒ decSet :=
           (implAnd
             (.syllogism
               (implAnd
-                (.syllogism andElimLeft (.syllogism andElimLeft (.syllogism andElimLeft andElimLeft)))
+                (.syllogism andElimLeft
+                  (.syllogism andElimLeft (.syllogism andElimLeft andElimLeft)))
                 andElimRight)
               eqI_trans)
             (.syllogism andElimLeft
-              (.syllogism andElimLeft (.syllogism andElimRight (.syllogism andElimRight eqI_symm)))))
+              (.syllogism andElimLeft
+                (.syllogism andElimRight (.syllogism andElimRight eqI_symm)))))
           (.syllogism eqI_trans (succInjective 3 0))))
       andMp)
   let cSucc : Γ ⊩ᵢ G ⇒ eqDec 2 1 :=
