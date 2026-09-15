@@ -13,8 +13,9 @@ so on. Everything here is sorry-free.
 
 What is deliberately absent is anything needing `p3`: double-negation
 elimination `~~φ ⇒ φ`, `~(φ ⇒ ψ) ⇒ φ`, `~(φ ⊓ ψ) ⇒ ~φ ⊔ ~ψ`, and excluded
-middle. These are unsound for the Heyting semantics (see
-`IML.DerivedRules.TopFilterModel`), so no derivation exists.
+middle. These are unsound for the Heyting semantics (refuted in a one-point
+chain-valued model, `IML.PointModel.dne_not_derivable`,
+`IML.PointModel.em_not_derivable`), so no derivation exists.
 -/
 
 namespace IML
