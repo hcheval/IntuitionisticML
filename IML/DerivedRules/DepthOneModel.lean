@@ -141,7 +141,8 @@ theorem shape [Nontrivial L] (C : AppCtx Bool) (ρ : GValuation (M u)) :
     right
     refine ⟨fun Y => app_false _ _ _, ?_⟩
     rcases ih with rfl | ⟨hf, -⟩
-    · exact ⟨j (ginterp (M u) ρ ψ false), fun Y => by rw [AppCtx.fill, app_true, inf_comm]⟩
+    · exact ⟨j (ginterp (M u) ρ ψ false), fun Y => by
+        simp only [AppCtx.fill, app_true]; rw [inf_comm]⟩
     · exact ⟨⊥, fun Y => by rw [AppCtx.fill, app_true, hf Y, j_bot, inf_bot_eq, inf_bot_eq]⟩
 
 theorem evar_eq {ρ : GValuation (M u)} (hρ : ρ.IsAdm) (n : EVarIndex) :

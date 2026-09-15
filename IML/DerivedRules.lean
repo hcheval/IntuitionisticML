@@ -5,6 +5,8 @@ import IML.DerivedRules.Fixpoint
 import IML.DerivedRules.Definedness
 import IML.DerivedRules.Temporal
 import IML.DerivedRules.TopFilterModel
+import IML.DerivedRules.PointModel
+import IML.DerivedRules.DepthOneModel
 
 /-!
 # Derived rules of iML and the expressivity survey
