@@ -16,6 +16,37 @@ the carrier is itself `L`-valued (the "total elements" case of a Fourman–Scott
 show that excluded middle for element variables, `x ∨ ¬x`, is **not derivable**
 in iML (`IML/Examples/ExcludedMiddle.lean`); in the paper's models it is valid.
 
+The repository therefore contains **two developments**, both sorry-free:
+
+- **`IML/Crisp/`** — the original development, as it accompanied the paper.
+  Models carry ordinary decidable equality and an element variable is
+  interpreted as `⟦x⟧(m) = if m = ρ(x) then ⊤ else ⊥`. The files are preserved
+  verbatim (only the namespace, `IML.Crisp`, and the internal imports changed),
+  and this is the development the paper's text corresponds to. Its main theorem
+  is `IML.Crisp.soundness`.
+- **`IML/`** — the current, generalized development with `L`-valued equality.
+  The paper's models are its crisp instances (`IML/CrispModels.lean`). Its main
+  theorem is `IML.soundness`.
+
+The bridge theorem in `IML/Crisp/Bridge.lean` relates them: a crisp model `M`
+determines the general model `M.toGeneral := crispModel ...`, and
+
+```lean
+theorem hinterp_toGeneral (M : Crisp.HModel Symbol L) (ρ : Crisp.HValuation M)
+    (φ : Pattern Symbol) (m : M.Carrier) :
+    Crisp.hinterp M ρ φ m = hinterp M.toGeneral ρ.toGeneral φ m
+
+theorem hvalid_iff (M : Crisp.HModel Symbol L) (φ : Pattern Symbol) :
+    Crisp.HValid M φ ↔ HValid M.toGeneral φ
+```
+
+so the crisp development is exactly the crisp fragment of the general one, and
+`IML.Crisp.soundness_of_general` derives the statement of `IML.Crisp.soundness`
+from `IML.soundness`. The only case of `hinterp_toGeneral` with content is
+`μ`/`ν`, where the general fixpoints range over extensional pre- and
+post-fixpoints and the crisp ones over all predicates; `crisp_ext` shows the
+two index sets coincide.
+
 ## Building
 
 Requires the toolchain in `lean-toolchain` (Lean 4.30.0-rc2) and `elan`.
@@ -37,6 +68,11 @@ lake build
 | `IML/HeytingSoundness.lean` | §3, Lemma 1, Lemma 3, Theorem 2 | Monotonicity (`hinterp_mono_pos`/`hinterp_mono_neg`), `fill_le_iSup`, one validity lemma per rule, and `soundness` |
 | `IML/LFPSoundness.lean` | §3 | Alternative treatment of the fixpoint rules via Mathlib's `OrderHom.lfp`/`OrderHom.gfp`, composed with the extensional hull `HModel.hull` (`soundness_lfp`) |
 | `IML/CrispModels.lean` | §2.1 | The paper's models as the special case `crispModel` with `E a b = if a = b then ⊤ else ⊥`; in them element variables are crisp (`crispModel_evar_crisp`) |
+| `IML/Crisp/HeytingSemantics.lean` | §2.1 (as published) | The original `HModel` with decidable equality, `HValuation`, `hinterp`, `HValid` — namespace `IML.Crisp`, text preserved |
+| `IML/Crisp/HInterpCommutation.lean` | §3, Lemma 2 (as published) | The original substitution lemmas `hinterp_svarSubst`, `hinterp_evarSubst` |
+| `IML/Crisp/HeytingSoundness.lean` | §3, Theorem 2 (as published) | The original monotonicity lemmas, validity lemmas, and `IML.Crisp.soundness` |
+| `IML/Crisp/LFPSoundness.lean` | §3 (as published) | The original lfp/gfp treatment of the fixpoint rules (`IML.Crisp.soundness_lfp`) |
+| `IML/Crisp/Bridge.lean` | — | The bridge: `hinterp_toGeneral`, `hvalid_iff`, and `soundness_of_general` (the crisp soundness theorem as an instance of the general one) |
 | `IML/Examples/Kripke.lean` | — | Kripke models as the crisp instance `L = Opens (WithUpperSet W)`; forcing relation and persistence |
 | `IML/Examples/OpenSets.lean` | — | Topological models `L = Opens X`; discrete and Alexandrov (constant-domain Kripke) instances |
 | `IML/Examples/ExcludedMiddle.lean` | — | A non-crisp countermodel to `x ∨ ¬x` and the theorem `excludedMiddle_not_derivable` |
@@ -121,6 +157,9 @@ the two distinct elements interpreted as the open `{1}`. Both theorems use only
   EXISTENCE uses reflexivity. No other rule mentions `E`. The paper's models
   are exactly the crisp models `crispModel` of `IML/CrispModels.lean`, for
   which every predicate is extensional and no side conditions are needed.
+  The original development with decidable equality is kept unchanged under
+  `IML/Crisp/`, and `IML/Crisp/Bridge.lean` proves the two agree on crisp
+  models.
 - **Empty carrier.** `Carrier` is not required to be nonempty. With an empty
   carrier every pattern is vacuously valid, since `HValid` quantifies over the
   points of the carrier.
