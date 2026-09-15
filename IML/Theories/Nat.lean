@@ -258,7 +258,8 @@ def natCases (n : EVarIndex) :
       (.evar n ∈ₘₗ zero_) ⊔ ∃ₑ ((.evar 0 ∈ₘₗ nat_) ⊓ (.evar (n + 1) ∈ₘₗ succ_ ⬝ .evar 0)) :=
   -- x ∈ succ ⬝ nat ⇒ ∃m. x ∈ succ ⬝ (m ⊓ nat)
   let s₁ : Γ ⊩ᵢ (.evar n ∈ₘₗ succ_ ⬝ nat_) ⇒ ∃ₑ (.evar (n + 1) ∈ₘₗ succ_ ⬝ (.evar 0 ⊓ nat_)) :=
-    .syllogism (ceil_mono (andMonoRight (.syllogism (.framingRight natElem) .propagationExistRight)))
+    .syllogism
+      (ceil_mono (andMonoRight (.syllogism (.framingRight natElem) .propagationExistRight)))
       (by rw [← evarLift_evar]; exact iffMpLeft memExist)
   -- x ∈ succ ⬝ (m ⊓ nat) ⇒ m ∈ nat ⊓ x ∈ succ ⬝ m
   let s₂ : Γ ⊩ᵢ (.evar (n + 1) ∈ₘₗ succ_ ⬝ (.evar 0 ⊓ nat_)) ⇒

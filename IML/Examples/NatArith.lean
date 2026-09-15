@@ -125,7 +125,8 @@ def evar_impl_addZero (n : EVarIndex) : Γ ⊩ᵢ .evar n ⇒ add_ ⬝ .evar n �
 /-- Zero is a right unit, set form: `nat ⇒ ∃n. n ⊓ (n + 0)`. No induction is
 needed, the axiom already speaks about every element. -/
 def addZeroRightSet : Γ ⊩ᵢ nat_ ⇒ ∃ₑ (.evar 0 ⊓ add_ ⬝ .evar 0 ⬝ zero_) :=
-  .syllogism natElem (existMono (implAnd andElimLeft (.syllogism andElimLeft (evar_impl_addZero 0))))
+  .syllogism natElem
+    (existMono (implAnd andElimLeft (.syllogism andElimLeft (evar_impl_addZero 0))))
 
 -- ─────────────────────────────────────────────────────────────
 -- Zero is a left unit, by induction
@@ -392,7 +393,8 @@ def assocStepCeil (a b n : EVarIndex) :
               (n := 0) (φ := _))
             (ceil_mono (.syllogism (.framingRight andElimRight)
               (.syllogism (ctxAnd succCtx)
-                (andMono (succLsum (a + 1) (b + 1) (n + 1)) (succRsum (a + 1) (b + 1) (n + 1))))))))))
+                (andMono (succLsum (a + 1) (b + 1) (n + 1))
+                         (succRsum (a + 1) (b + 1) (n + 1))))))))))
 
 /-- Inductive step: `succ ⬝ assocPred a b ⇒ assocPred a b`. Name `succ n` as
 `w` and move the overlap from `succ n` to `w` in both holes. -/
@@ -428,11 +430,13 @@ def addAssoc (a b : EVarIndex) : Γ ⊩ᵢ nat_ ⇒ assocPred a b :=
 `addAssoc`: the current element is some `n`, so `x ∈ n`, hence `x =ⁱ n`
 (Lemma 3.9, from the `⌈·⌉` scheme), and `n` is replaced by `x` in both holes. -/
 def addAssocAt (a b n : EVarIndex) :
-    Γ ⊩ᵢ .evar n ⊓ nat_ ⇒ ⌈lsum (.evar a) (.evar b) (.evar n) ⊓ rsum (.evar a) (.evar b) (.evar n)⌉ :=
+    Γ ⊩ᵢ .evar n ⊓ nat_ ⇒
+      ⌈lsum (.evar a) (.evar b) (.evar n) ⊓ rsum (.evar a) (.evar b) (.evar n)⌉ :=
   .syllogism (andMonoRight (addAssoc a b))
     (.syllogism pushConjInExist' (.existGen
       (φ₂ := ⌈lsum (.evar a) (.evar b) (.evar n) ⊓ rsum (.evar a) (.evar b) (.evar n)⌉) (by
-      simp only [lsum, rsum, evarLift_ceil, evarLift_conj, evarLift_app, evarLift_add, evarLift_evar]
+      simp only [lsum, rsum, evarLift_ceil, evarLift_conj, evarLift_app, evarLift_add,
+        evarLift_evar]
       exact .syllogism
         (implAnd (.syllogism (implAnd (.syllogism andElimRight andElimLeft) andElimLeft)
                     (.syllogism evar_and_impl_ceil (mem_impl_eqI 0 (n + 1))))
