@@ -74,8 +74,30 @@ class IsAddTheory (Symbol : Type) [HasCeil Symbol] [HasNatOps Symbol] [HasAddOps
   /-- `∀x y. add x (succ y) =ⁱ succ (add x y)`. -/
   addSucc : (∀ₑ (∀ₑ (add_ ⬝ .evar 1 ⬝ (succ_ ⬝ .evar 0) =ⁱₘₗ
     succ_ ⬝ (add_ ⬝ .evar 1 ⬝ .evar 0)))) ∈ Γ
+  /-- `∀x y. ∃v. add x y =ⁱ v`: addition is a total function. -/
+  addFun : (∀ₑ (∀ₑ (∃ₑ (add_ ⬝ .evar 2 ⬝ .evar 1 =ⁱₘₗ .evar 0)))) ∈ Γ
 
 variable {Γ : Set (Pattern Symbol)} [IsAddTheory Symbol Γ]
+
+/-- `∃v. add a b =ⁱ v` (under the binder `a`, `b` are shifted). -/
+def addFunctional (a b : EVarIndex) :
+    Γ ⊩ᵢ ∃ₑ (add_ ⬝ .evar (a + 1) ⬝ .evar (b + 1) =ⁱₘₗ .evar 0) := by
+  have h₁ : Γ ⊩ᵢ evarSubst 0 (.evar a) (∀ₑ (∃ₑ (add_ ⬝ .evar 2 ⬝ .evar 1 =ⁱₘₗ .evar 0))) :=
+    .mp (forallElim (n := a)) (.assumption IsAddTheory.addFun)
+  simp only [Pattern.eqI, Pattern.totalI, Pattern.memML, Pattern.ceil, Pattern.iff,
+    Pattern.add_, evarSubst, evarLift, evarLiftFrom] at h₁
+  have h₂ := Proof.mp (forallElim (n := b)) h₁
+  simpa [Pattern.eqI, Pattern.totalI, Pattern.memML, Pattern.ceil, Pattern.iff,
+    Pattern.add_, evarSubst, evarLift, evarLiftFrom] using h₂
+
+/-- `⌈add a b⌉`: sums are defined. -/
+def addDefined (a b : EVarIndex) : Γ ⊩ᵢ ⌈add_ ⬝ .evar a ⬝ .evar b⌉ :=
+  existElim (addFunctional a b) (ψ := ⌈add_ ⬝ .evar a ⬝ .evar b⌉) (by
+    rw [evarLift_ceil, evarLift_app, evarLift_app, evarLift_add, evarLift_evar, evarLift_evar]
+    exact .syllogism eqI_symm
+      (implMp (.exportation (eqI_leibniz_in ceilCtx .hole (φ := .evar 0)
+          (ψ := add_ ⬝ .evar (a + 1) ⬝ .evar (b + 1))))
+        (extraPremise ceil_of_evar)))
 
 /-- **Zero is a right unit**: `n + 0 =ⁱ n`. An instance of the first axiom. -/
 def addZeroRight (n : EVarIndex) : Γ ⊩ᵢ add_ ⬝ .evar n ⬝ zero_ =ⁱₘₗ .evar n := by
