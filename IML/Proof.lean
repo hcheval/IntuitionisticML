@@ -115,7 +115,7 @@ inductive Proof {Symbol : Type} (Γ : Set (Pattern Symbol)) :
   | park {φ ψ} :
       Proof Γ (ψ ⇒ svarSubst 0 ψ φ) →
       Proof Γ (ψ ⇒ ν φ)
-  -- Application (tentative — same as classical)
+  -- Application: SINGLETON, propagation of ∨ and ∃ out of contexts, framing
   | singleton {C₁ C₂ : AppCtx Symbol} {n : EVarIndex} {φ} :
       Proof Γ (~(C₁.fill (.evar n ⊓ φ) ⊓ C₂.fill (.evar n ⊓ ~φ)))
   | propagationOrLeft {φ₁ φ₂ ψ} :
