@@ -3,10 +3,18 @@ import IML.HeytingSoundness
 /-!
 # Fixed-point soundness via lfp/gfp
 
-Under positivity, the map `S ↦ ⟦φ⟧(ρ[X := S])` is monotone on the
-complete lattice `Carrier → L`. We connect `hinterp` of `μ`/`ν` to
-Mathlib's `OrderHom.lfp`/`OrderHom.gfp`, then derive the fixpoint rules
-from `OrderHom.map_lfp`/`OrderHom.map_gfp` (Knaster-Tarski).
+Under positivity, the map `S ↦ ⟦φ⟧(ρ[X := S])` is monotone on extensional
+predicates. To use Mathlib's `OrderHom.lfp`/`OrderHom.gfp` on the complete
+lattice `Carrier → L` without building a lattice structure on the subtype of
+extensional predicates, we precompose with the extensional hull
+`HModel.hull` (the least extensional predicate above a given one):
+
+    fixpointFun S := ⟦φ⟧(ρ[X := hull S])
+
+Its least fixed point is extensional (it is an interpretation) and coincides
+with `hinterp (μ φ)`, the infimum of the extensional prefixpoints; dually for
+`ν`. The fixpoint rules then follow from `OrderHom.map_lfp`/`OrderHom.map_gfp`
+(Knaster-Tarski).
 
 - **preFixpoint**: immediate from `map_lfp` (the fixed point equation)
 - **postFixpoint**: immediate from `map_gfp`
@@ -37,11 +45,12 @@ variable (M : HModel Symbol L) (ρ : HValuation M) (φ : Pattern Symbol)
 
 noncomputable def fixpointFun (hpos : SVarPositive φ 0) :
     (M.Carrier → L) →o (M.Carrier → L) where
-  toFun S := fun m => hinterp M (ρ.pushSVar S) φ m
+  toFun S := fun m => hinterp M (ρ.pushSVar (M.hull S) (M.hull_ext S)) φ m
   monotone' S₁ S₂ hle m :=
-    hinterp_mono_pos hpos (ρ.pushSVar S₁) (ρ.pushSVar S₂) rfl
+    hinterp_mono_pos hpos (ρ.pushSVar (M.hull S₁) (M.hull_ext S₁))
+      (ρ.pushSVar (M.hull S₂) (M.hull_ext S₂)) rfl
       (fun i hi => by cases i with | zero => exact absurd rfl hi | succ => rfl)
-      (hle ·) m
+      (fun n => M.hull_mono hle n) m
 
 end MonotoneFunctional
 
@@ -49,25 +58,47 @@ end MonotoneFunctional
 -- Bridge: hinterp of μ/ν equals Mathlib's lfp/gfp
 -- ─────────────────────────────────────────────────────────────
 
+theorem fixpointFun_apply_of_ext {φ : Pattern Symbol} (hpos : SVarPositive φ 0)
+    {S : M.Carrier → L} (hS : M.Ext S) (m : M.Carrier) :
+    fixpointFun M ρ φ hpos S m = hinterp M (ρ.pushSVar S hS) φ m := by
+  change hinterp M (ρ.pushSVar (M.hull S) (M.hull_ext S)) φ m = _
+  rw [HValuation.pushSVar_congr ρ (M.hull_eq_of_ext hS) (M.hull_ext S) hS]
+
+theorem lfp_ext {φ : Pattern Symbol} (hpos : SVarPositive φ 0) :
+    M.Ext (fixpointFun M ρ φ hpos).lfp := by
+  rw [← (fixpointFun M ρ φ hpos).map_lfp]
+  exact hinterp_ext φ _
+
+theorem gfp_ext {φ : Pattern Symbol} (hpos : SVarPositive φ 0) :
+    M.Ext (fixpointFun M ρ φ hpos).gfp := by
+  rw [← (fixpointFun M ρ φ hpos).map_gfp]
+  exact hinterp_ext φ _
+
 theorem hinterp_mu_eq_lfp {φ : Pattern Symbol} (hpos : SVarPositive φ 0)
     (m : M.Carrier) :
     hinterp M ρ (μ φ) m = (fixpointFun M ρ φ hpos).lfp m := by
   apply le_antisymm
   · apply sInf_le
-    exact ⟨(fixpointFun M ρ φ hpos).lfp,
-      fun n => le_of_eq (congr_fun (fixpointFun M ρ φ hpos).map_lfp n), rfl⟩
-  · apply le_sInf; intro x ⟨S, hS, hx⟩; subst hx
-    exact OrderHom.lfp_le (f := fixpointFun M ρ φ hpos) hS m
+    refine ⟨(fixpointFun M ρ φ hpos).lfp, lfp_ext hpos, fun n => ?_, rfl⟩
+    rw [← fixpointFun_apply_of_ext hpos (lfp_ext hpos) n]
+    exact le_of_eq (congr_fun (fixpointFun M ρ φ hpos).map_lfp n)
+  · apply le_sInf; rintro x ⟨S, hS, hpre, rfl⟩
+    refine OrderHom.lfp_le (f := fixpointFun M ρ φ hpos) (fun n => ?_) m
+    rw [fixpointFun_apply_of_ext hpos hS n]
+    exact hpre n
 
 theorem hinterp_nu_eq_gfp {φ : Pattern Symbol} (hpos : SVarPositive φ 0)
     (m : M.Carrier) :
     hinterp M ρ (ν φ) m = (fixpointFun M ρ φ hpos).gfp m := by
   apply le_antisymm
-  · apply sSup_le; intro x ⟨S, hS, hx⟩; subst hx
-    exact OrderHom.le_gfp (f := fixpointFun M ρ φ hpos) hS m
+  · apply sSup_le; rintro x ⟨S, hS, hpost, rfl⟩
+    refine OrderHom.le_gfp (f := fixpointFun M ρ φ hpos) (fun n => ?_) m
+    rw [fixpointFun_apply_of_ext hpos hS n]
+    exact hpost n
   · apply le_sSup
-    exact ⟨(fixpointFun M ρ φ hpos).gfp,
-      fun n => le_of_eq (congr_fun (fixpointFun M ρ φ hpos).map_gfp n).symm, rfl⟩
+    refine ⟨(fixpointFun M ρ φ hpos).gfp, gfp_ext hpos, fun n => ?_, rfl⟩
+    rw [← fixpointFun_apply_of_ext hpos (gfp_ext hpos) n]
+    exact le_of_eq (congr_fun (fixpointFun M ρ φ hpos).map_gfp n).symm
 
 -- ─────────────────────────────────────────────────────────────
 -- Fixed point equations via Mathlib's Knaster-Tarski
@@ -75,23 +106,23 @@ theorem hinterp_nu_eq_gfp {φ : Pattern Symbol} (hpos : SVarPositive φ 0)
 
 theorem hinterp_mu_fixpoint {φ : Pattern Symbol} (hpos : SVarPositive φ 0)
     (m : M.Carrier) :
-    hinterp M (ρ.pushSVar (fun n => hinterp M ρ (μ φ) n)) φ m =
+    hinterp M (ρ.pushSVar (fun n => hinterp M ρ (μ φ) n) (hinterp_ext _ ρ)) φ m =
     hinterp M ρ (μ φ) m := by
   have hfun : (fun n => hinterp M ρ (μ φ) n) = (fixpointFun M ρ φ hpos).lfp :=
     funext (hinterp_mu_eq_lfp hpos)
-  trans (fixpointFun M ρ φ hpos).lfp m
-  · rw [hfun]; exact congr_fun (fixpointFun M ρ φ hpos).map_lfp m
-  · exact (hinterp_mu_eq_lfp hpos m).symm
+  rw [HValuation.pushSVar_congr ρ hfun (hinterp_ext _ ρ) (lfp_ext hpos),
+    ← fixpointFun_apply_of_ext hpos (lfp_ext hpos) m, hinterp_mu_eq_lfp hpos m]
+  exact congr_fun (fixpointFun M ρ φ hpos).map_lfp m
 
 theorem hinterp_nu_fixpoint {φ : Pattern Symbol} (hpos : SVarPositive φ 0)
     (m : M.Carrier) :
-    hinterp M (ρ.pushSVar (fun n => hinterp M ρ (ν φ) n)) φ m =
+    hinterp M (ρ.pushSVar (fun n => hinterp M ρ (ν φ) n) (hinterp_ext _ ρ)) φ m =
     hinterp M ρ (ν φ) m := by
   have hfun : (fun n => hinterp M ρ (ν φ) n) = (fixpointFun M ρ φ hpos).gfp :=
     funext (hinterp_nu_eq_gfp hpos)
-  trans (fixpointFun M ρ φ hpos).gfp m
-  · rw [hfun]; exact congr_fun (fixpointFun M ρ φ hpos).map_gfp m
-  · exact (hinterp_nu_eq_gfp hpos m).symm
+  rw [HValuation.pushSVar_congr ρ hfun (hinterp_ext _ ρ) (gfp_ext hpos),
+    ← fixpointFun_apply_of_ext hpos (gfp_ext hpos) m, hinterp_nu_eq_gfp hpos m]
+  exact congr_fun (fixpointFun M ρ φ hpos).map_gfp m
 
 -- ─────────────────────────────────────────────────────────────
 -- Fixpoint soundness rules
@@ -108,12 +139,12 @@ theorem hvalid_knasterTarski_lfp {φ ψ : Pattern Symbol}
     (m : M.Carrier) :
     hinterp M ρ (μ φ ⇒ ψ) m = ⊤ := by
   simp only [hinterp]; rw [himp_eq_top_iff]
-  have hpre : ∀ n, hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n)) φ n ≤
+  have hpre : ∀ n, hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n) (hinterp_ext ψ ρ)) φ n ≤
       hinterp M ρ ψ n := fun n => by
     have := h n; simp only [hinterp] at this
     exact himp_eq_top_iff.mp (by rw [hinterp_svarSubst] at this; exact this)
   apply sInf_le
-  exact ⟨fun n => hinterp M ρ ψ n, hpre, rfl⟩
+  exact ⟨fun n => hinterp M ρ ψ n, hinterp_ext ψ ρ, hpre, rfl⟩
 
 theorem hvalid_postFixpoint_lfp {φ : Pattern Symbol}
     (hpos : SVarPositive φ 0) (m : M.Carrier) :
@@ -127,11 +158,11 @@ theorem hvalid_park_lfp {φ ψ : Pattern Symbol}
     hinterp M ρ (ψ ⇒ ν φ) m = ⊤ := by
   simp only [hinterp]; rw [himp_eq_top_iff]
   have hpost : ∀ n, hinterp M ρ ψ n ≤
-      hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n)) φ n := fun n => by
+      hinterp M (ρ.pushSVar (fun n => hinterp M ρ ψ n) (hinterp_ext ψ ρ)) φ n := fun n => by
     have := h n; simp only [hinterp] at this
     exact himp_eq_top_iff.mp (by rw [hinterp_svarSubst] at this; exact this)
   apply le_sSup
-  exact ⟨fun n => hinterp M ρ ψ n, hpost, rfl⟩
+  exact ⟨fun n => hinterp M ρ ψ n, hinterp_ext ψ ρ, hpost, rfl⟩
 
 -- ─────────────────────────────────────────────────────────────
 -- Full soundness theorem
@@ -139,7 +170,7 @@ theorem hvalid_park_lfp {φ ψ : Pattern Symbol}
 
 theorem soundness_lfp {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
     (h : Γ ⊩ᵢ φ) :
-    ∀ (L : Type*) [inst : Order.Frame L] (M : HModel Symbol L),
+    ∀ (L : Type*) [Order.Frame L] (M : HModel Symbol L),
     (∀ γ ∈ Γ, HValid M γ) → HValid M φ := by
   induction h with
   | assumption hmem => exact fun _ _ M hΓ ρ m => hΓ _ hmem ρ m
