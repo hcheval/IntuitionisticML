@@ -226,13 +226,22 @@ All rows assume the definedness axiom `∀x.⌈x⌉` in `Γ` (`IsDefinedness`).
 
 ## 7. Tally
 
-95 numbered items (several rows bundle two directions). Counting each row by its
-dominant verdict:
+95 numbered rows (some bundle two directions or several rules):
 
-* **(a)** 50 — of which 38 backed by Lean proofs, 12 on paper;
-* **(b)** 8 (rows 28, 40, 45, 54, 90, 93, 94, and the weak halves of 37);
-* **(c)** 37 — **(c!)** proved 16 (rows 2, 5, 9, 11, 12, 19, 22, 31, 36, 37, 39,
-  48, 56, 67/75/76(←), 77/78, 85(Fun), 91, 95), **(c?)** 21.
+* **(a)** 42 rows fully derivable — 37 backed by Lean proofs, 5 on paper
+  (rows 52, 55, 61, 82, 84);
+* **(a)/(c) split by direction** 6 rows (33, 66, 67, 74, 75, 76): the
+  monotonicity/converse-Barcan direction is derived in Lean, the other direction
+  is (c?) (needs ¬¬-propagation) or (c!) (Barcan, DNE);
+* **mixed rule tables** 5 rows (85–89: LTL, finite LTL, CTL, DL, RL): the
+  existential/Knaster–Tarski rules port, every rule that distributes the dual box
+  over a conjunction does not;
+* **(b)** 7 rows (28, 40, 45, 54, 90, 93, 94);
+* **(c!)** 17 rows with proved underivability or unsoundness (2, 5, 9, 11, 12,
+  19, 22, 31, 36, 37, 39, 48, 56, 77, 78, 91, 95) — 8 of them by Lean
+  countermodel, the rest by unsoundness arguments on paper;
+* **(c?)** 18 rows not derived and not refuted (21, 24, 29, 41–44, 46, 47, 49,
+  58, 59, 62, 63, 79, 80, 83, 92).
 
 ## 8. What is in `IML/DerivedRules/`
 
