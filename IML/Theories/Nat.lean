@@ -349,4 +349,47 @@ def zeroEqDecidable (n : EVarIndex) :
 
 end Pos
 
+-- ─────────────────────────────────────────────────────────────
+-- Predicate propagation: the one principle iML does not provide
+-- ─────────────────────────────────────────────────────────────
+
+/-- The predicate-propagation axiom schemes: definedness patterns and positive
+totalities are predicate patterns, `θ ⇒ ⌊θ⌋ⁱ`. Sound in every `HModel` with
+definedness (both have the same value at every point); whether they are
+derivable in iML is open (`IML.IsPred`). Assumed, as axioms in `Γ`, only for
+the results that need to rewrite with an equality *inside* `⌈·⌉`:
+associativity and decidability of equality. -/
+class HasPredProp (Symbol : Type) [HasCeil Symbol] (Γ : Set (Pattern Symbol)) : Prop where
+  ceilPred : ∀ φ : Pattern Symbol, (⌈φ⌉ ⇒ ⌊⌈φ⌉⌋ⁱ) ∈ Γ
+  totalPred : ∀ φ : Pattern Symbol, (⌊φ⌋ⁱ ⇒ ⌊⌊φ⌋ⁱ⌋ⁱ) ∈ Γ
+
+section PredProp
+
+variable [HasPredProp Symbol Γ]
+
+/-- A positive equality is a predicate pattern (from the scheme). -/
+def eqI_isPred (φ ψ : Pattern Symbol) : IsPred Γ (φ =ⁱₘₗ ψ) :=
+  .assumption (HasPredProp.totalPred (φ ⟺ ψ))
+
+/-- Leibniz's law for a hole below `⌈·⌉`, an application-free context `P`
+and an application context `A`: `(φ =ⁱ ψ) ⊓ ⌈P[A[φ]]⌉ ⇒ ⌈P[A[ψ]]⌉`. The
+equality enters `⌈·⌉` by predicate propagation, then `eqI_leibniz` applies. -/
+def eqI_leibniz_ceil (P : PCtx Symbol) (A : AppCtx Symbol) {φ ψ : Pattern Symbol} :
+    Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⊓ ⌈P.fill (A.fill φ)⌉ ⇒ ⌈P.fill (A.fill ψ)⌉ :=
+  .syllogism (pred_ctx (eqI_isPred φ ψ) ceilCtx) (ceil_mono (eqI_leibniz P A .hole φ ψ))
+
+/-- Leibniz's law for the two-hole context `⌈A₁[□] ⊓ A₂[□]⌉`. -/
+def eqI_leibniz_ceil₂ (A₁ A₂ : AppCtx Symbol) {φ ψ : Pattern Symbol} :
+    Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⊓ ⌈A₁.fill φ ⊓ A₂.fill φ⌉ ⇒ ⌈A₁.fill ψ ⊓ A₂.fill ψ⌉ :=
+  .syllogism (implAnd andElimLeft (eqI_leibniz_ceil (.conjL .hole (A₂.fill φ)) A₁))
+    (eqI_leibniz_ceil (.conjR (A₁.fill ψ) .hole) A₂)
+
+/-- Lemma 3.9(→) for variables, `x ∈ y ⇒ x =ⁱ y`, from the `⌈·⌉` scheme. -/
+def mem_impl_eqI (n m : EVarIndex) : Γ ⊩ᵢ (.evar n ∈ₘₗ .evar m) ⇒ (.evar n =ⁱₘₗ .evar m) :=
+  mem_impl_eqI_of_pred (.assumption (by
+    simp only [Pattern.memML, evarLift_ceil, evarLift_conj, evarLift_evar]
+    exact HasPredProp.ceilPred _))
+
+end PredProp
+
 end IML
