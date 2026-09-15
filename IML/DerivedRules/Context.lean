@@ -14,9 +14,11 @@ classical derivation (credited to Mircea Sebe in the thesis) only uses
 SINGLETON from the positive one.
 
 What is *not* derivable is the ¬¬-propagation `C[~~φ] ⇒ ~~C[φ]`; see
-`IML.DerivedRules.TopFilterModel` for the countermodel. This is the reason
-the modal (K) rule for the dual box `~C[~·]` (Theorem 3.2(1)) does not go
-through; only (N) and the converse Barcan formula survive.
+`IML.DerivedRules.DepthOneModel` for the countermodel
+(`IML.DepthOne.nnPropagation_not_derivable`). The modal (K) rule for the dual
+box `~C[~·]` (Theorem 3.2(1)) and `□_C φ ⊓ □_C ψ ⇒ □_C (φ ⊓ ψ)` are refuted
+there as well (`boxK_not_derivable`, `boxAnd_not_derivable`); only (N),
+monotonicity and the converse Barcan formula survive.
 -/
 
 namespace IML

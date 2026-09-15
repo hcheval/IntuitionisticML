@@ -103,7 +103,7 @@ lake build
 | `IML/Examples/OpenSets.lean` | — | Topological models `L = Opens X`; discrete and Alexandrov (constant-domain Kripke) instances |
 | `IML/Examples/ExcludedMiddle.lean` | — | A non-crisp countermodel to `x ∨ ¬x` and the theorem `excludedMiddle_not_derivable` |
 | `IML/SingletonAlt/` | — | The three singleton rules compared: soundness of the positive variants, `ProofCore` (iML with a pluggable singleton scheme), and the independence results `singleton ⊬ singletonStrong` (intuitionistically) and `singletonAlt ⊬ singleton` (even classically); see `IML/SingletonAlt.lean` |
-| `IML/DerivedRules/` | — | Derived rules (propositional, first-order, contexts, fixpoints, definedness and membership, temporal) and the top-filter model, a non-standard model of the *published* system showing it incomplete for its Heyting semantics; see `IML/DerivedRules.lean` |
+| `IML/DerivedRules/` | — | Derived rules (propositional, first-order, contexts, fixpoints, definedness, membership and positive equality, temporal) and three families of countermodels: the top-filter model (published system only), small chain-valued `HModel`s, and the depth-one model, a generalized model validating every rule of the current system including `singletonStrong` (`IML.DepthOne.valid_strong`) and refuting ¬¬-propagation and the modal (K) rule, so the current system is incomplete for its Heyting semantics (`IML.DepthOne.nnPropagation_not_derivable`); see `IML/DerivedRules.lean` and `iml-expressivity-report.md` |
 
 The main theorem is `IML.soundness` in `IML/HeytingSoundness.lean`:
 

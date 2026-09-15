@@ -13,10 +13,11 @@ The proof system's SINGLETON rule is the positive
 *transported* between contexts. This is what the membership calculus needs;
 every classical proof of the results below routes instead through the
 *membership excluded middle* `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉`, which is unsound
-in the Heyting semantics. With the negative rule alone (the published
-system, `IML.Crisp.Proof`) the items marked (†) are underivable
-(`IML.TopFilter.phi_impl_ceil_not_derivable`); they used to be stated here
-under a hypothesis `SingletonPos`, which is now the rule.
+in the Heyting semantics (`IML.PointModel.memEM_not_derivable`). With the
+negative rule alone (the published system, `IML.Crisp.Proof`) the items
+marked (†) are underivable (`IML.TopFilter.phi_impl_ceil_not_derivable`);
+they used to be stated here under a hypothesis `SingletonPos`, which is now
+the rule.
 
 * Derivable: definedness of variables, `⌈·⌉` monotone, `⌈⊥⌉ ⇒ ⊥`,
   `⌈φ ⊔ ψ⌉ ⟺ ⌈φ⌉ ⊔ ⌈ψ⌉`, `⌈∃x.φ⌉ ⟺ ∃x.⌈φ⌉`, membership introduction,
@@ -30,10 +31,24 @@ under a hypothesis `SingletonPos`, which is now the rule.
 * Weakened: for the classical totality `⌊φ⌋ := ~⌈~φ⌉` only `⌊φ⌋ ⇒ ~~φ`
   (Corollary 3.1 gives `⌊φ⌋ ⇒ φ` classically, by DNE).
 
-* Open: Membership¬(←) `~(x ∈ φ) ⇒ x ∈ ~φ`. It is underivable in the
-  published system (`IML.TopFilter.memNegIntro_not_derivable`); that
-  countermodel does not validate the positive rule, so its status in the
-  current system is not settled here.
+* Positive equality `φ =ⁱ ψ := ⌊φ ⟺ ψ⌋ⁱ`: reflexive, symmetric, transitive
+  (`eqI_trans`), implies the classical `⌊φ ⟺ ψ⌋`, and satisfies Leibniz's law
+  `(φ =ⁱ ψ) ⊓ C[φ] ⇒ C[ψ]` for every hole of the shape `Q[A[P[□]]]`
+  (`eqI_leibniz`: application-free `Q`, application context `A`,
+  application-free `P`, binders and both sides of `⇒` allowed in `Q` and
+  `P`); in particular `x =ⁱ φ ⇒ x ∈ φ` (Lemma 3.9(←)). Semantically it is the
+  Ω-set equality `E` (`IML/DerivedRules/EqualitySemantics.lean`).
+
+* Open: Membership¬(←) `~(x ∈ φ) ⇒ x ∈ ~φ`, Membership⇒(←), Lemma 3.9(→)
+  `x ∈ y ⇒ x =ⁱ y`, Lemma 3.17(←), and Leibniz under `μ`/`ν` or through an
+  application below a connective below an application. All are sound, and
+  all follow from one principle: that `⌈·⌉`-patterns (and their negations and
+  implications) are *predicate patterns* `θ ⇒ ⌊θ⌋ⁱ` (`IsPred`,
+  `memNegIntro_of_pred`, `memImplIntro_of_pred`, `mem_impl_eqI_of_pred`,
+  `ctx_mem_intro_of_pred`). Whether `⌈φ⌉ ⇒ ⌊⌈φ⌉⌋ⁱ` is derivable is not
+  settled; the top-filter refutation of Membership¬(←)
+  (`IML.TopFilter.memNegIntro_not_derivable`) concerns the published system
+  only.
 -/
 
 namespace IML
