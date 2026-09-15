@@ -1,1 +1,4 @@
 /.lake
+
+# Agent worktrees (bash ../scripts/worktree.sh <name>); branches live in .git regardless
+/.worktrees/
