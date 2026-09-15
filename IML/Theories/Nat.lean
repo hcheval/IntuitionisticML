@@ -58,7 +58,9 @@ Is `x =ⁱ y ⊔ ¬(x =ⁱ y)` derivable for naturals `x`, `y`?
   (`eqI_congr_succ`), and carrying the predicate through the application
   context `succ ⬝ □` needs `¬(y =ⁱ x)` and `x ∈ nat` to enter contexts. Both
   amount to the *predicate-propagation* principle `θ ⇒ ⌊θ⌋ⁱ` for
-  `θ = ⌈φ⌉, ⌊φ⌋ⁱ` (`IML.IsPred`): sound in every Heyting model, not derived
+  `θ = ⌈φ⌉, ⌊φ⌋ⁱ` (`IML.IsPred`): sound in every Heyting model with
+  standard definedness (`HModel.StdCeil`, where both have the same value at
+  every point — this uses only `StdCeil`, not crispness of `E`), not derived
   from the rules of iML. It is assumed as the axiom scheme `HasPredProp`, and
   decidability is proved relative to it.
 
