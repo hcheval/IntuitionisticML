@@ -119,11 +119,11 @@ def lemAx : Pattern Symbol → Pattern Symbol := fun φ => φ ⊔ ~φ
 /-- Double negation elimination `~~φ ⇒ φ`. -/
 def dneAx : Pattern Symbol → Pattern Symbol := fun φ => ~~φ ⇒ φ
 
-/-- Union of two schemes. -/
-def axUnion {ι κ : Type} (A : ι → Pattern Symbol) (B : κ → Pattern Symbol) :
-    ι ⊕ κ → Pattern Symbol := Sum.elim A B
-
 end Schemes
+
+/-- Union of two schemes. -/
+def axUnion {Symbol : Type} {ι κ : Type} (A : ι → Pattern Symbol) (B : κ → Pattern Symbol) :
+    ι ⊕ κ → Pattern Symbol := Sum.elim A B
 
 /-- The proposed system: iML with `singleton` replaced by `singletonAlt`. -/
 abbrev ProofAlt {Symbol : Type} (Γ : Set (Pattern Symbol)) (φ : Pattern Symbol) : Type :=
