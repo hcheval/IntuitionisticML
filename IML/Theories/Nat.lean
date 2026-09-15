@@ -72,7 +72,8 @@ def Pattern.nat_ : Pattern Symbol := .symbol HasNatOps.nat
 def natBody : Pattern Symbol := zero_ ⊔ succ_ ⬝ .svar 0
 
 omit [HasCeil Symbol] in
-theorem natBody_subst (P : Pattern Symbol) : natBody[0 ₛ↦ P] = zero_ ⊔ succ_ ⬝ P := by
+theorem natBody_subst (P : Pattern Symbol) :
+    natBody[0 ₛ↦ P] = Pattern.disj zero_ (succ_ ⬝ P) := by
   simp [natBody, svarSubst, Pattern.zero_, Pattern.succ_]
 
 omit [HasCeil Symbol] in
@@ -93,6 +94,13 @@ theorem evarLift_succ_evar (n : EVarIndex) :
     evarLift (succ_ ⬝ .evar n : Pattern Symbol) = succ_ ⬝ .evar (n + 1) := by
   simp [evarLift, evarLiftFrom, Pattern.succ_]
 
+omit [HasCeil Symbol] [HasNatOps Symbol] in
+theorem evarLift_conj (φ ψ : Pattern Symbol) :
+    evarLift (Pattern.conj φ ψ) = Pattern.conj (evarLift φ) (evarLift ψ) := rfl
+
+omit [HasCeil Symbol] [HasNatOps Symbol] in
+theorem evarLift_neg (φ : Pattern Symbol) : evarLift (~φ) = ~(evarLift φ) := rfl
+
 /-- The application context `succ ⬝ □`. -/
 def succCtx : AppCtx Symbol := .right succ_ .hole
 
@@ -109,11 +117,11 @@ class IsNatTheory (Symbol : Type) [HasCeil Symbol] [HasNatOps Symbol]
   /-- `∃y. zero =ⁱ y`: zero is an element. -/
   zeroFun : (∃ₑ (zero_ =ⁱₘₗ .evar 0)) ∈ Γ
   /-- `∀x. ∃y. succ x =ⁱ y`: successor is a total function. -/
-  succFun : (∀ₑ ∃ₑ (succ_ ⬝ .evar 1 =ⁱₘₗ .evar 0)) ∈ Γ
+  succFun : (∀ₑ (∃ₑ (succ_ ⬝ .evar 1 =ⁱₘₗ .evar 0))) ∈ Γ
   /-- `∀x. ¬(zero =ⁱ succ x)`. -/
   noConf : (∀ₑ ~(zero_ =ⁱₘₗ succ_ ⬝ .evar 0)) ∈ Γ
   /-- `∀x y. succ x =ⁱ succ y ⇒ x =ⁱ y`. -/
-  succInj : (∀ₑ ∀ₑ ((succ_ ⬝ .evar 1 =ⁱₘₗ succ_ ⬝ .evar 0) ⇒ (.evar 1 =ⁱₘₗ .evar 0))) ∈ Γ
+  succInj : (∀ₑ (∀ₑ ((succ_ ⬝ .evar 1 =ⁱₘₗ succ_ ⬝ .evar 0) ⇒ (.evar 1 =ⁱₘₗ .evar 0)))) ∈ Γ
   /-- `nat =ⁱ μX. zero ⊔ succ X`: no junk. -/
   noJunk : (nat_ =ⁱₘₗ μ natBody) ∈ Γ
 
@@ -127,7 +135,7 @@ class IsNatTheoryPos (Symbol : Type) [HasCeil Symbol] [HasNatOps Symbol]
   zeroSingleton : (∀ₑ ((.evar 0 ∈ₘₗ zero_) ⇒ (zero_ =ⁱₘₗ .evar 0))) ∈ Γ
   /-- `∀x y. y ∈ succ x ⇒ succ x =ⁱ y`. -/
   succSingleton :
-    (∀ₑ ∀ₑ ((.evar 0 ∈ₘₗ succ_ ⬝ .evar 1) ⇒ (succ_ ⬝ .evar 1 =ⁱₘₗ .evar 0))) ∈ Γ
+    (∀ₑ (∀ₑ ((.evar 0 ∈ₘₗ succ_ ⬝ .evar 1) ⇒ (succ_ ⬝ .evar 1 =ⁱₘₗ .evar 0)))) ∈ Γ
 
 variable {Γ : Set (Pattern Symbol)} [IsNatTheory Symbol Γ]
 
@@ -141,7 +149,7 @@ def zeroFunctional : Γ ⊩ᵢ ∃ₑ (zero_ =ⁱₘₗ .evar 0) := .assumption 
 /-- `∃y. succ n =ⁱ y` (under the binder `n` is shifted to `n + 1`). -/
 def succFunctional (n : EVarIndex) : Γ ⊩ᵢ ∃ₑ (succ_ ⬝ .evar (n + 1) =ⁱₘₗ .evar 0) := by
   have h : Γ ⊩ᵢ evarSubst 0 (.evar n) (∃ₑ (succ_ ⬝ .evar 1 =ⁱₘₗ .evar 0)) :=
-    .mp forallElim (.assumption IsNatTheory.succFun)
+    .mp (forallElim (n := n)) (.assumption IsNatTheory.succFun)
   simpa [Pattern.eqI, Pattern.totalI, Pattern.memML, Pattern.ceil, Pattern.iff, Pattern.succ_,
     evarSubst, evarLift, evarLiftFrom] using h
 
@@ -294,9 +302,8 @@ def zeroSuccDisjoint (m : EVarIndex) : Γ ⊩ᵢ ~⌈zero_ ⊓ succ_ ⬝ .evar m
     .syllogism (ceil_mono (.syllogism (implAnd (extraPremise .existence) implSelf)
                                       pushConjInExist))
       (by
-        have h := ctxPropagationExist (Γ := Γ) ceilCtx
-          (φ := .evar 0 ⊓ evarLift (zero_ ⊓ succ_ ⬝ .evar m))
-        rwa [evarLift, evarLiftFrom, evarLift_zero, evarLift_succ_evar] at h)
+        rw [evarLift_conj, evarLift_zero, evarLift_succ_evar]
+        exact ctxPropagationExist ceilCtx)
   .syllogism s₁ (.existGen (φ₂ := ⊥ₘ)
     (.syllogism memAndElim
       (.syllogism (andMono (zeroSingleton 0) (.syllogism (succSingleton 0 (m + 1)) eqI_symm))
@@ -318,9 +325,9 @@ def zeroEqDecidable (n : EVarIndex) :
     Γ ⊩ᵢ (.evar n ∈ₘₗ nat_) ⇒ (zero_ =ⁱₘₗ .evar n) ⊔ ~(zero_ =ⁱₘₗ .evar n) :=
   .syllogism (natCasesEq n)
     (orMono implSelf (.existGen (φ₂ := ~(zero_ =ⁱₘₗ .evar n)) (by
-      rw [evarLift, evarLiftFrom, evarLift_eqI, evarLift_zero, evarLift_evar]
+      rw [evarLift_neg, evarLift_eqI, evarLift_zero, evarLift_evar]
       exact .syllogism andElimRight (.exportation (.syllogism .permutationAnd
-        (.syllogism (andMonoRight eqI_symm) (.syllogism eqI_trans (noConfusion (n + 1)))))))))
+        (.syllogism (andMonoRight eqI_symm) (.syllogism eqI_trans (noConfusion 0))))))))
 
 end Pos
 
