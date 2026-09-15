@@ -192,4 +192,15 @@ def wfFold : Γ ⊩ᵢ allnx next (wf next) ⇒ wf next := by
   have h := Proof.preFixpoint (Γ := Γ) (wf_body_pos next)
   rwa [wf_body_subst] at h
 
+-- ─────────────────────────────────────────────────────────────
+-- Thesis Theorem 5.6: Peano induction = (No Junk) + KNASTER-TARSKI
+-- ─────────────────────────────────────────────────────────────
+
+/-- With `⊤Nat := μD. zero ⊔ succ(D)`, which is `evt succ zero`, structural
+induction over `zero`/`succ` is an instance of `evtInduction`:
+from `zero ⇒ Ψ` and `succ(Ψ) ⇒ Ψ` infer `⊤Nat ⇒ Ψ`. Fully intuitionistic. -/
+def peanoInduction (succ : Symbol) {zero Ψ : Pattern Symbol}
+    (h₀ : Γ ⊩ᵢ zero ⇒ Ψ) (h₁ : Γ ⊩ᵢ nx succ Ψ ⇒ Ψ) : Γ ⊩ᵢ evt succ zero ⇒ Ψ :=
+  evtInduction succ (orElim h₀ h₁)
+
 end IML
