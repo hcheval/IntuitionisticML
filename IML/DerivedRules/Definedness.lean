@@ -72,6 +72,8 @@ theorem ceilCtx_fill (φ : Pattern Symbol) : (ceilCtx (Symbol := Symbol)).fill �
 
 theorem ceilCtx_liftEVar : (ceilCtx (Symbol := Symbol)).liftEVar = ceilCtx := rfl
 
+theorem evarLift_ceil (φ : Pattern Symbol) : evarLift ⌈φ⌉ = ⌈evarLift φ⌉ := rfl
+
 class IsDefinedness (Symbol : Type) [HasCeil Symbol] (Γ : Set (Pattern Symbol)) : Prop where
   defAxiom : ∀ₑ ⌈.evar 0⌉ ∈ Γ
 
@@ -267,5 +269,112 @@ def phi_impl_existCeilEvar : Γ ⊩ᵢ φ ⇒ ∃ₑ (⌈.evar 0 ⊓ evarLift φ
 /-- Lemma 3.19: `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
 def existCeilEvar_iff : Γ ⊩ᵢ φ ⟺ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) :=
   iffIntro phi_impl_existCeilEvar existCeilEvar_impl
+
+-- ─────────────────────────────────────────────────────────────
+-- Transport out of nested contexts: `⌈C[φ]⌉ ⇒ ⌈φ⌉`, idempotence of `⌈·⌉`
+-- ─────────────────────────────────────────────────────────────
+
+/-- `⌈C[φ]⌉ ⇒ ⌈φ⌉`: split `φ` as `∃y. y ⊓ φ`, propagate the `∃` out of
+`⌈C[·]⌉`, and transport `y ⊓ φ` from the context `⌈C[□]⌉` into `⌈y⌉` by the
+positive SINGLETON. -/
+def ceil_ctx_impl_ceil (C : AppCtx Symbol) : Γ ⊩ᵢ ⌈C.fill φ⌉ ⇒ ⌈φ⌉ :=
+  let s₁ : Γ ⊩ᵢ φ ⇒ ∃ₑ (.evar 0 ⊓ evarLift φ) :=
+    .syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist
+  let s₂ : Γ ⊩ᵢ ⌈C.liftEVar.fill (.evar 0 ⊓ evarLift φ)⌉ ⇒ ⌈evarLift φ⌉ :=
+    ctx_evar_impl_ceil (.right (.symbol HasCeil.ceil) C.liftEVar) (n := 0)
+  .syllogism (ceil_mono (ctxFraming C s₁))
+    (.syllogism (ceil_mono (ctxPropagationExist C))
+      (.syllogism (ctxPropagationExist ceilCtx)
+        (.existGen (φ₂ := ⌈φ⌉) (by rw [ceilCtx_liftEVar, evarLift_ceil, ceilCtx_fill]; exact s₂))))
+
+/-- Idempotence of definedness, `⌈⌈φ⌉⌉ ⇒ ⌈φ⌉`. -/
+def ceil_ceil : Γ ⊩ᵢ ⌈⌈φ⌉⌉ ⇒ ⌈φ⌉ := ceil_ctx_impl_ceil ceilCtx
+
+def ceil_ceil_iff : Γ ⊩ᵢ ⌈⌈φ⌉⌉ ⟺ ⌈φ⌉ := iffIntro ceil_ceil phi_impl_ceil
+
+/-- `x ∈ φ ⇒ x ∈ (x ∈ φ)`. -/
+def mem_mem {n : EVarIndex} : Γ ⊩ᵢ .evar n ∈ₘₗ φ ⇒ .evar n ∈ₘₗ (.evar n ∈ₘₗ φ) :=
+  ceil_mono (implAnd andElimLeft evar_and_impl_ceil)
+
+/-- Lemma 3.17 (→): `C[φ₁ ⊓ x ∈ φ₂] ⇒ C[φ₁] ⊓ x ∈ φ₂`, for any pattern `x`.
+The membership conjunct leaves the context through Lemma 3.14 and
+idempotence. -/
+def ctx_mem_elim (C : AppCtx Symbol) :
+    Γ ⊩ᵢ C.fill (φ ⊓ (x ∈ₘₗ ψ)) ⇒ C.fill φ ⊓ (x ∈ₘₗ ψ) :=
+  implAnd (ctxFraming C andElimLeft)
+    (.syllogism (ctxFraming C andElimRight) (.syllogism (ctxImplDefined C) ceil_ceil))
+
+/-- Membership∀ (→): `x ∈ ∀y.φ ⇒ ∀y. x ∈ φ`. The converse is sound but not
+derived (see the report). -/
+def memForallElim : Γ ⊩ᵢ x ∈ₘₗ (∀ₑ φ) ⇒ ∀ₑ (evarLift x ∈ₘₗ φ) :=
+  .forallGen (φ₁ := x ∈ₘₗ (∀ₑ φ)) (ceil_mono (andMonoRight forallElimLift))
+
+-- ─────────────────────────────────────────────────────────────
+-- Positive totality propagates into contexts
+-- ─────────────────────────────────────────────────────────────
+
+/-- `⌊φ⌋ⁱ ⇒ x ∈ φ` (instantiation). -/
+def totalI_elim {n : EVarIndex} : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ .evar n ∈ₘₗ φ := by
+  have h : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ evarSubst 0 (.evar n) ⌈.evar 0 ⊓ evarLift φ⌉ := forallElim
+  simpa only [Pattern.ceil, Pattern.memML, evarSubst, evarSubst_evarLift,
+    beq_self_eq_true, ↓reduceIte] using h
+
+/-- Monotonicity of `⌊·⌋ⁱ` (the hypothesis is stated for the lifted patterns
+because it is used under the binder). -/
+def totalI_mono (h : Γ ⊩ᵢ evarLift φ ⇒ evarLift ψ) : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ ⌊ψ⌋ⁱ :=
+  forallMono (ceil_mono (andMonoRight h))
+
+/-- **Positively total patterns propagate into contexts**:
+`⌊χ⌋ⁱ ⊓ C[ψ] ⇒ C[χ ⊓ ψ]`. Write `C[ψ]` as `∃y. C[y ⊓ ψ]`; `⌊χ⌋ⁱ` instantiates
+to `⌈y ⊓ χ⌉`, and the positive SINGLETON transports `χ` from `⌈y ⊓ χ⌉` into
+`C[y ⊓ ψ]`. This is the constructive replacement for the thesis' "predicate
+patterns propagate" (Lemma 3.17(←), Lemma 4.7). -/
+def totalI_ctx (C : AppCtx Symbol) : Γ ⊩ᵢ ⌊φ⌋ⁱ ⊓ C.fill ψ ⇒ C.fill (φ ⊓ ψ) :=
+  let s₁ : Γ ⊩ᵢ ψ ⇒ ∃ₑ (.evar 0 ⊓ evarLift ψ) :=
+    .syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist
+  let s₂ : Γ ⊩ᵢ C.fill ψ ⇒ ∃ₑ (C.liftEVar.fill (.evar 0 ⊓ evarLift ψ)) :=
+    .syllogism (ctxFraming C s₁) (ctxPropagationExist C)
+  let s₃ : Γ ⊩ᵢ evarLift ⌊φ⌋ⁱ ⊓ C.liftEVar.fill (.evar 0 ⊓ evarLift ψ) ⇒
+      C.liftEVar.fill (evarLift φ ⊓ evarLift ψ) :=
+    .syllogism (andMonoLeft (forallElimLift (φ := ⌈.evar 0 ⊓ evarLift φ⌉)))
+      (.syllogism (.singletonStrong (C₁ := ceilCtx) (C₂ := C.liftEVar) (n := 0)
+          (φ := evarLift φ) (ψ := evarLift ψ))
+        (ctxFraming _ andElimRight))
+  .syllogism (andMonoRight s₂)
+    (.syllogism pushConjInExist'
+      (.existGen (φ₂ := C.fill (φ ⊓ ψ)) (by rw [evarLift_fill]; exact s₃)))
+
+/-- `⌈⌊φ⌋ⁱ⌉ ⇒ ⌊φ⌋ⁱ`: positive totality also leaves `⌈·⌉`. -/
+def ceil_totalI : Γ ⊩ᵢ ⌈⌊φ⌋ⁱ⌉ ⇒ ⌊φ⌋ⁱ :=
+  .forallGen (φ₁ := ⌈⌊φ⌋ⁱ⌉)
+    (.syllogism (ceil_mono (forallElimLift (φ := ⌈.evar 0 ⊓ evarLift φ⌉))) ceil_ceil)
+
+-- ─────────────────────────────────────────────────────────────
+-- Positive equality `φ =ⁱ ψ := ⌊φ ⟺ ψ⌋ⁱ` and its elimination (Lemma 3.15)
+-- ─────────────────────────────────────────────────────────────
+
+/-- Positive (intuitionistic) equality `⌊φ ⟺ ψ⌋ⁱ = ∀x. x ∈ (φ ⟺ ψ)`, with
+Heyting value `⨅_a (φ a ⟺ ψ a)`; the classical `φ =ₘₗ ψ := ⌊φ ⟺ ψ⌋` only
+has value `⨅_a ¬¬(φ a ⟺ ψ a)`. -/
+def Pattern.eqI (φ ψ : Pattern Symbol) : Pattern Symbol := ⌊φ ⟺ ψ⌋ⁱ
+
+scoped infixl:50 " =ⁱₘₗ " => Pattern.eqI
+
+def eqI_of_iff (h : Γ ⊩ᵢ evarLift φ ⟺ evarLift ψ) : Γ ⊩ᵢ φ =ⁱₘₗ ψ := memIntroAll h
+
+def eqI_refl : Γ ⊩ᵢ φ =ⁱₘₗ φ := memIntroAll iffRefl
+
+def eqI_symm : Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⇒ (ψ =ⁱₘₗ φ) := totalI_mono andSwap
+
+/-- Positive equality implies the classical one. -/
+def eqI_impl_eqML : Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⇒ (φ =ₘₗ ψ) := totalI_impl_total
+
+/-- Lemma 3.15 for application contexts: `φ₁ =ⁱ φ₂ ⊓ C[φ₁] ⇒ C[φ₂]`. -/
+def eqI_elim_ctx (C : AppCtx Symbol) :
+    Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⊓ C.fill φ ⇒ C.fill ψ :=
+  .syllogism (totalI_ctx C) (ctxFraming C (.syllogism (andMonoLeft andElimLeft) andMp))
+
+/-- Lemma 3.15, hole case: `φ₁ =ⁱ φ₂ ⇒ φ₁ ⇒ φ₂`. -/
+def eqI_elim : Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⇒ φ ⇒ ψ := .exportation (eqI_elim_ctx .hole)
 
 end IML
