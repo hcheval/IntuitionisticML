@@ -41,6 +41,23 @@ the rules of `IML.Proof`; nothing is assumed about models.
   singleton is all of it), which is classically equivalent and gives the
   `=ⁱ`-shaped case analysis `natCasesEq` and the decidability of
   equality with `zero`, `zeroEqDecidable`.
+
+## Decidability of equality
+
+Is `x =ⁱ y ⊔ ¬(x =ⁱ y)` derivable for naturals `x`, `y`? What is derived
+here is the special case `y := zero` (`zeroEqDecidable`), from the case
+analysis: in the successor case `zero =ⁱ x =ⁱ succ m` contradicts
+no-confusion. The general statement would be proved, as in Heyting
+arithmetic, by induction on `y` with the predicate
+`∀x. x ∈ nat ⇒ (y =ⁱ x) ⊔ ¬(y =ⁱ x)`; the successor step needs, in the
+positive branch `y =ⁱ k`, the *internal* congruence
+`(y =ⁱ k) ⇒ (succ y =ⁱ succ k)`, which is again the predicate-propagation
+principle (`IML.IsPred`, see `IML.Examples.NatArith`). So the obstacle is
+not excluded middle but the fact that iML's rules do not let a positive
+equality enter an application context as an equality. Note also that
+`x =ⁱ y ⊔ ¬(x =ⁱ y)` is *valid in every Heyting model* for element
+variables `x`, `y`, because element variables denote crisp points; hence
+it cannot be refuted by a Heyting countermodel either.
 -/
 
 namespace IML

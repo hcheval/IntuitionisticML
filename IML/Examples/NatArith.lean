@@ -37,8 +37,20 @@ a variable, the term is first named through functionality (`∃v. zero =ⁱ v`)
 and the variable is replaced by Leibniz's law in application contexts
 (`eqI_elim_ctx`). None of this uses excluded middle.
 
-Associativity, which needs the two-hole predicate `⌈(a+b)+n ⊓ a+(b+n)⌉` and
-hence the congruence above, is discussed at the end of the file.
+Associativity needs the two-hole predicate `⌈(a+b)+n ⊓ a+(b+n)⌉` and hence
+the congruence above. It is proved (`addAssoc`) relative to the
+predicate-propagation scheme `HasPredProp`, which states that principle as an
+axiom; see the section at the end of the file.
+
+## Constructive accounting
+
+Nothing here uses excluded middle, double-negation elimination, or the
+classical totality `⌊·⌋`. The three ingredients beyond intuitionistic
+propositional and first-order reasoning are: the fixpoint rules (induction
+and unfolding), the positive SINGLETON rule (transporting an element variable
+between application contexts, through `singletonAlt` and Leibniz's law
+`eqI_elim_ctx`), and, for associativity only, the predicate-propagation
+scheme.
 -/
 
 namespace IML
