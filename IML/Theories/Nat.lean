@@ -1,5 +1,7 @@
 import IML.DerivedRules.Definedness
 import IML.DerivedRules.Fixpoint
+import IML.DerivedRules.EqualitySemantics
+import IML.Examples.ExcludedMiddle
 
 /-!
 # The theory of natural numbers in iML
@@ -60,12 +62,21 @@ Is `x =ⁱ y ⊔ ¬(x =ⁱ y)` derivable for naturals `x`, `y`?
   from the rules of iML. It is assumed as the axiom scheme `HasPredProp`, and
   decidability is proved relative to it.
 
-So the obstacle to decidable equality is not excluded middle — the proof is
-the constructive double induction — but the fact that iML's rules do not
-let a positive equality enter an application context *as an equality*. Note
-also that `x =ⁱ y ⊔ ¬(x =ⁱ y)` is *valid in every Heyting model* for
-element variables `x`, `y`, because element variables denote crisp points;
-hence it cannot be refuted by a Heyting countermodel either.
+So the obstacle to decidable equality *on the naturals* is not excluded
+middle — the proof is the constructive double induction — but the fact
+that iML's rules do not let a positive equality enter an application
+context *as an equality*.
+
+For bare element variables, on the other hand, decidability of equality
+**is refuted**: `(x =ⁱ y) ⊔ ¬(x =ⁱ y)` is not derivable from the definedness
+axiom (`eqI_evar_decidable_not_derivable`, at the end of this file). The
+Heyting semantics interprets a model's equality as an `L`-valued `E`, an
+element variable `x` at `m` has the value `E m ρ(x)`, and
+`⟦x =ⁱ y⟧ = E ρ(x) ρ(y)` (`hinterp_eqI_evar`); in the two-point model with
+`E true false = u` a proper open, the pattern takes the value
+`u ⊔ (u ⇨ ⊥) ≠ ⊤`. So element variables are *not* crisp in this semantics,
+and the natural-number induction above is doing real work: the elements
+whose equality it decides are exactly those reachable from `zero` by `succ`.
 -/
 
 namespace IML
@@ -630,5 +641,77 @@ def natEqDecidable (n m : EVarIndex) :
       exact body)))
 
 end Decidable
+
+end IML
+
+-- ─────────────────────────────────────────────────────────────
+-- Decidability of equality of element variables is NOT derivable
+-- ─────────────────────────────────────────────────────────────
+
+namespace IML
+
+open Pattern Examples.ExcludedMiddle
+
+variable (Symbol : Type) [HasCeil Symbol] (L : Type*) [Order.Frame L] (u : L)
+
+/-- The two-point model of `IML.Examples.ExcludedMiddle` (carrier `Bool`,
+`E a b = if a = b then ⊤ else u`) with definedness interpreted standardly:
+every symbol and the application relation are `⊤`. -/
+def stdTwoPointModel : HModel Symbol L where
+  Carrier := Bool
+  E a b := if a = b then ⊤ else u
+  E_refl _ := if_pos rfl
+  E_symm a b := by
+    by_cases h : a = b
+    · subst h; rfl
+    · rw [if_neg h, if_neg (Ne.symm h)]
+  E_trans a b c := by
+    split_ifs <;> simp_all
+  appInterp _ _ _ := ⊤
+  symInterp _ _ := ⊤
+  symInterp_ext _ _ _ := inf_le_right
+  appInterp_ext₁ _ _ _ _ := inf_le_right
+  appInterp_ext₂ _ _ _ _ := inf_le_right
+  appInterp_ext₃ _ _ _ _ := inf_le_right
+
+theorem stdTwoPointModel_stdCeil : (stdTwoPointModel Symbol L u).StdCeil :=
+  ⟨fun _ => rfl, fun _ _ _ => rfl⟩
+
+/-- The definedness axiom `∀x. ⌈x⌉` holds in the model. -/
+theorem stdTwoPointModel_defAxiom : HValid (stdTwoPointModel Symbol L u) (∀ₑ ⌈.evar 0⌉) := by
+  intro ρ m
+  simp only [Pattern.ceil, hinterp_forall, hinterp_app, hinterp_symbol, hinterp_evar]
+  refine le_antisymm le_top (le_iInf fun a => le_iSup_of_le a (le_iSup_of_le a ?_))
+  simp [stdTwoPointModel, HValuation.pushEVar]
+
+/-- The valuation `x ↦ true`, `y ↦ false` (and `⊥` for set variables). -/
+def xyValuation : HValuation (stdTwoPointModel Symbol L u) where
+  evar n := n == 0
+  svar _ _ := ⊥
+  svar_ext _ _ _ := inf_le_right
+
+/-- `⟦(x =ⁱ y) ⊔ ¬(x =ⁱ y)⟧ = u ⊔ (u ⇨ ⊥)` at every point. -/
+theorem stdTwoPointModel_hinterp_eqDec (m : Bool) :
+    hinterp (stdTwoPointModel Symbol L u) (xyValuation Symbol L u)
+      (Pattern.disj (.evar 0 =ⁱₘₗ .evar 1) (~(.evar 0 =ⁱₘₗ .evar 1))) m = u ⊔ (u ⇨ ⊥) := by
+  rw [hinterp_disj, Pattern.neg, hinterp_impl, hinterp_bot,
+    hinterp_eqI_evar (stdTwoPointModel_stdCeil Symbol L u)]
+  simp [stdTwoPointModel, xyValuation]
+
+/-- **Decidability of equality of element variables is not derivable** in
+iML from the definedness axiom: `(x =ⁱ y) ⊔ ¬(x =ⁱ y)` fails in the
+two-point model over the opens of the Kripke frame `0 ≤ 1`, where the
+equality of the two points is the proper open `{1}`. -/
+theorem eqI_evar_decidable_not_derivable :
+    ¬ Nonempty (({∀ₑ ⌈.evar 0⌉} : Set (Pattern Symbol)) ⊩ᵢ
+      Pattern.disj (.evar 0 =ⁱₘₗ .evar 1) (~(.evar 0 =ⁱₘₗ .evar 1))) := by
+  rintro ⟨h⟩
+  have hv := soundness h _ (stdTwoPointModel Symbol _ U₁)
+    (fun γ hγ => by
+      rw [Set.mem_singleton_iff.mp hγ]
+      exact stdTwoPointModel_defAxiom Symbol _ U₁)
+    (xyValuation Symbol _ U₁) false
+  rw [stdTwoPointModel_hinterp_eqDec] at hv
+  exact U₁_sup_himp_ne_top hv
 
 end IML
