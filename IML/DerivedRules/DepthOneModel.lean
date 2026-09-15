@@ -1,8 +1,12 @@
 import IML.SingletonAlt.GModel
 import IML.DerivedRules.TopFilterModel
+import IML.DerivedRules.Temporal
+import Mathlib.Order.UpperLower.CompleteLattice
+import Mathlib.Order.UpperLower.Principal
 
 /-!
-# The depth-one model: ¬¬-propagation is underivable in the current system
+# The depth-one model: ¬¬-propagation and the modal (K) rule are underivable
+# in the current system
 
 `TopFilterModel.lean` refutes the ¬¬-propagation `C[~~φ] ⇒ ~~C[φ]` for the
 *published* system, but its model refutes the positive SINGLETON
@@ -13,12 +17,18 @@ about the current system `IML.Proof`. This file gives a generalized model
 (`valid_strong`), and still refutes ¬¬-propagation. Hence the current system
 is incomplete for its Heyting semantics as well (`nnPropagation_not_derivable`).
 
+Over a frame in which `⊤` is join-prime but which is not a chain (`L₅`
+below) the same model also refutes the modal (K) rule for the dual box
+`σᵈφ := ~(σ ⬝ ~φ)` and the conjunction law `σᵈφ ⊓ σᵈψ ⇒ σᵈ(φ ⊓ ψ)`
+(`boxK_not_derivable`, `boxAnd_not_derivable`), both of which are valid in
+every `HModel`.
+
 ## The model
 
-Values in a complete chain `L` with a middle element `u`; carrier `Bool`;
-crisp admissible element denotations `χ 0 = {0}`, `χ 1 = {1}`; the twist
-`δ := j` of the top-filter model (`j p = ⊤` iff `p = ⊤`, else `⊥`); and the
-one-step application relation
+Values in a frame `L` whose top is join-prime (`TopJoinPrime`: every complete
+chain, and `L₅`); carrier `Bool`; crisp admissible element denotations
+`χ 0 = {0}`, `χ 1 = {1}`; the twist `δ := j` of the top-filter model
+(`j p = ⊤` iff `p = ⊤`, else `⊥`); and the one-step application relation
 
     R a b m := ⊤  iff  m = 1 and a = b = 0,
 
@@ -36,12 +46,20 @@ premise contains both `x(1)` and `j(x(0))`, which is `⊥` for a crisp `x`. The
 point is that a context never lands on the point it looks at, so the
 "inflationary" instances `x ⊓ φ ⊓ C[x] ⇒ C[x ⊓ φ]` that broke the top-filter
 model are vacuous here. (The definedness axiom `∀x.⌈x⌉` therefore fails in
-this model, which is why it settles nothing about §3.2 of the thesis.)
+this model, which is why it settles nothing about §3.2 of the thesis; see
+the report for why no model of this kind can.)
 
 ## Why ¬¬-propagation fails
 
-With `s ↦ ⊤` and `c ↦ u`: `(s ⬝ ~~c)(1) = j(⊤) ⊓ j(¬¬u) = ⊤` but
-`~~(s ⬝ c)(1) = ¬¬(j(⊤) ⊓ j(u)) = ¬¬⊥ = ⊥`.
+With `s ↦ ⊤` and `c ↦ u`, `⊥ < u < ⊤` in a chain: `(s ⬝ ~~c)(1) = j(⊤) ⊓
+j(¬¬u) = ⊤` but `~~(s ⬝ c)(1) = ¬¬(j(⊤) ⊓ j(u)) = ¬¬⊥ = ⊥`.
+
+## Why (K) fails
+
+At the point `1` the dual box is `σᵈφ(1) = ¬j(¬φ(0))`. In a chain this is
+`⊤` iff `φ(0) ≠ ⊥`, and (K) holds. In `L₅` (the down-sets of the poset
+`q, r < p`) take `u := ↓q`: then `¬u = ↓r` and `¬¬u = ↓q`, neither `⊤`, so
+`σᵈ(~c)(1) = σᵈc(1) = ⊤` while `σᵈ⊥(1) = ¬j(⊤) = ⊥`.
 
 This file does not `open Pattern` (notation clash with the lattice
 connectives).
@@ -52,7 +70,15 @@ namespace IML.DepthOne
 open IML.TopFilter (j j_top j_of_ne_top j_mono j_sup_le chain_top_prime nn_of_ne_bot
   one_ne_bot one_ne_top)
 
-variable {L : Type*} [CompleteLinearOrder L]
+/-- `⊤` is join-prime. This is what makes the point `j` join-preserving. -/
+class TopJoinPrime (L : Type*) [Order.Frame L] : Prop where
+  prime : ∀ u v : L, u ⊔ v = ⊤ → u = ⊤ ∨ v = ⊤
+
+instance {L : Type*} [CompleteLinearOrder L] : TopJoinPrime L := ⟨chain_top_prime⟩
+
+section Frame
+
+variable {L : Type*} [Order.Frame L]
 
 -- ─────────────────────────────────────────────────────────────
 -- `j` preserves binary meets; crisp singletons
@@ -81,6 +107,8 @@ def appR (a b m : Bool) : L := if m = true ∧ a = false ∧ b = false then ⊤ 
 /-- The admissible element denotations: the two crisp singletons. -/
 def adm : Set (Bool → L) := {χ false, χ true}
 
+variable [TopJoinPrime L]
+
 -- ─────────────────────────────────────────────────────────────
 -- The model
 -- ─────────────────────────────────────────────────────────────
@@ -94,7 +122,7 @@ noncomputable abbrev M (u : L) : GModel Bool L where
   adm_cover m := ⟨χ m, by cases m <;> simp [adm], by simp [χ]⟩
   δ := j
   δ_mono _ _ h := j_mono h
-  δ_sup p q := j_sup_le chain_top_prime p q
+  δ_sup p q := j_sup_le TopJoinPrime.prime p q
   δ_iSup f := by
     by_cases h : (⨆ X, f X) = ⊤
     · have hle : (⨆ X, f X) ≤ f ⟨χ false, by simp [adm]⟩ ⊔ f ⟨χ true, by simp [adm]⟩ := by
@@ -105,7 +133,7 @@ noncomputable abbrev M (u : L) : GModel Bool L where
         · exact le_sup_left
         · exact le_sup_right
       rw [h] at hle
-      rcases chain_top_prime _ _ (top_le_iff.mp hle) with h' | h'
+      rcases TopJoinPrime.prime _ _ (top_le_iff.mp hle) with h' | h'
       · exact le_iSup_of_le ⟨χ false, by simp [adm]⟩ (by rw [h', j_top]; exact le_top)
       · exact le_iSup_of_le ⟨χ true, by simp [adm]⟩ (by rw [h', j_top]; exact le_top)
     · rw [j_of_ne_top h]; exact bot_le
@@ -115,6 +143,11 @@ variable {u : L}
 @[simp] theorem M_δ (p : L) : (M u).δ p = j p := rfl
 @[simp] theorem M_app (a b m : Bool) : (M u).appInterp a b m = appR a b m := rfl
 @[simp] theorem M_sym (s : Bool) (m : Bool) : (M u).symInterp s m = if s then ⊤ else u := rfl
+
+/-- The symbol interpreted as `⊤`. -/
+abbrev s : Pattern Bool := .symbol true
+/-- The symbol interpreted as `u`. -/
+abbrev c : Pattern Bool := .symbol false
 
 theorem app_false (φ ψ : Pattern Bool) (ρ : GValuation (M u)) :
     ginterp (M u) ρ (.app φ ψ) false = ⊥ := by
@@ -157,7 +190,9 @@ theorem evar_eq {ρ : GValuation (M u)} (hρ : ρ.IsAdm) (n : EVarIndex) :
 -- `singletonStrong` is valid
 -- ─────────────────────────────────────────────────────────────
 
-/-- **The positive SINGLETON `singletonStrong` is valid in the depth-one model.** -/
+/-- **The positive SINGLETON `singletonStrong` is valid in the depth-one model.**
+Together with `gsoundness` this makes every derivation of the current system
+`IML.Proof` valid in `M u`. -/
 theorem valid_strong [Nontrivial L] : ∀ i, GValid (M u) (singletonStrongAx Bool i) := by
   rintro ⟨⟨C₁, C₂, n, φ⟩, ψ⟩ ρ hρ m
   obtain ⟨c, hc⟩ := evar_eq hρ n
@@ -198,14 +233,60 @@ theorem valid_strong [Nontrivial L] : ∀ i, GValid (M u) (singletonStrongAx Boo
     · exact inf_le_right.trans (inf_le_left.trans inf_le_right)
     · exact inf_le_right.trans inf_le_right
 
+/-- Every derivation of the current system from `∅` is valid in `M u`. -/
+theorem sound [Nontrivial L] {φ : Pattern Bool} (h : (∅ : Set (Pattern Bool)) ⊩ᵢ φ) :
+    GValid (M u) φ :=
+  gsoundness h.toCore L (M u) valid_strong (fun _ hγ => absurd hγ (Set.notMem_empty _))
+
+/-- The admissible valuation `x ↦ {0}` for every `x`, set variables `⊥`. -/
+def ρ₀ (u : L) : GValuation (M u) where
+  evar _ := χ false
+  svar _ _ := ⊥
+
+theorem ρ₀_adm : (ρ₀ u).IsAdm := fun _ => by simp [ρ₀, adm]
+
 -- ─────────────────────────────────────────────────────────────
--- The refutation
+-- The dual box `σᵈφ = ~(s ⬝ ~φ)` at the point `1`
 -- ─────────────────────────────────────────────────────────────
 
-/-- The symbol interpreted as `⊤`. -/
-abbrev s : Pattern Bool := .symbol true
-/-- The symbol interpreted as `u`. -/
-abbrev c : Pattern Bool := .symbol false
+theorem allnx_eq_box (φ : Pattern Bool) : allnx true φ = (AppCtx.right s .hole).box φ := rfl
+
+/-- `σᵈφ(1) = ¬ j(¬ φ(0))`. -/
+theorem allnx_true [Nontrivial L] (φ : Pattern Bool) (ρ : GValuation (M u)) :
+    ginterp (M u) ρ (allnx true φ) true = j (ginterp (M u) ρ φ false ⇨ ⊥) ⇨ ⊥ := by
+  simp only [allnx, nx, Pattern.neg, ginterp_impl, ginterp_bot, app_true, ginterp_symbol,
+    ↓reduceIte, j_top, top_inf_eq]
+
+/-- The (K) instance `σᵈ(~c) ⇒ σᵈc ⇒ σᵈ⊥` has value `⊥` at `1` whenever
+`¬u ≠ ⊤` and `¬¬u ≠ ⊤`. -/
+theorem cm_boxK [Nontrivial L] (hu₁ : u ⇨ ⊥ ≠ ⊤) (hu₂ : (u ⇨ ⊥) ⇨ ⊥ ≠ ⊤)
+    (ρ : GValuation (M u)) :
+    ginterp (M u) ρ (.impl (allnx true (.neg c)) (.impl (allnx true c) (allnx true .bot)))
+      true = ⊥ := by
+  simp only [ginterp_impl, allnx_true, Pattern.neg, ginterp_bot, ginterp_symbol,
+    Bool.false_eq_true, ↓reduceIte, bot_himp, j_top, top_himp]
+  rw [j_of_ne_top hu₁, j_of_ne_top hu₂, bot_himp, top_himp, top_himp]
+
+/-- The instance `σᵈc ⊓ σᵈ(~c) ⇒ σᵈ(c ⊓ ~c)` has value `⊥` at `1` under the same
+hypotheses. -/
+theorem cm_boxAnd [Nontrivial L] (hu₁ : u ⇨ ⊥ ≠ ⊤) (hu₂ : (u ⇨ ⊥) ⇨ ⊥ ≠ ⊤)
+    (ρ : GValuation (M u)) :
+    ginterp (M u) ρ (.impl (.conj (allnx true c) (allnx true (.neg c)))
+      (allnx true (.conj c (.neg c)))) true = ⊥ := by
+  simp only [ginterp_impl, ginterp_conj, allnx_true, Pattern.neg, ginterp_bot, ginterp_symbol,
+    Bool.false_eq_true, ↓reduceIte]
+  rw [j_of_ne_top hu₁, j_of_ne_top hu₂, inf_comm u, himp_inf_self, bot_inf_eq, bot_himp, j_top,
+    top_himp, top_inf_eq, top_himp]
+
+end Frame
+
+-- ─────────────────────────────────────────────────────────────
+-- The refutation of ¬¬-propagation (over a chain)
+-- ─────────────────────────────────────────────────────────────
+
+section Chain
+
+variable {L : Type*} [CompleteLinearOrder L] {u : L}
 
 /-- `s ⬝ ~~c ⇒ ~~(s ⬝ c)` has value `⊥` at the point `1`. -/
 theorem cm_nnPropagation [Nontrivial L] (hu₁ : u ≠ ⊥) (hu₂ : u ≠ ⊤) (ρ : GValuation (M u)) :
@@ -215,12 +296,7 @@ theorem cm_nnPropagation [Nontrivial L] (hu₁ : u ≠ ⊥) (hu₂ : u ≠ ⊤) 
   rw [nn_of_ne_bot hu₁, j_top, j_of_ne_top hu₂]
   simp
 
-/-- The admissible valuation `x ↦ {0}` for every `x`, set variables `⊥`. -/
-def ρ₀ (u : L) : GValuation (M u) where
-  evar _ := χ false
-  svar _ _ := ⊥
-
-theorem ρ₀_adm : (ρ₀ u).IsAdm := fun _ => by simp [ρ₀, adm]
+end Chain
 
 /-- **¬¬-propagation `C[~~φ] ⇒ ~~C[φ]` is not derivable in the current
 system** (instance `C = s ⬝ □`, `φ = c`), although it is valid in every
@@ -229,9 +305,130 @@ theorem nnPropagation_not_derivable :
     IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ
       .impl (.app s (.neg (.neg c))) (.neg (.neg (.app s c)))) := by
   constructor; intro h
-  have := gsoundness h.toCore ℕ∞ (M 1) valid_strong
-    (fun _ hγ => absurd hγ (Set.notMem_empty _)) (ρ₀ 1) ρ₀_adm true
+  have := sound (L := ℕ∞) (u := 1) h (ρ₀ 1) ρ₀_adm true
   rw [cm_nnPropagation one_ne_bot one_ne_top] at this
+  exact bot_ne_top this
+
+-- ─────────────────────────────────────────────────────────────
+-- The frame `L₅` and the refutation of (K)
+-- ─────────────────────────────────────────────────────────────
+
+/-- The poset `q, r < p`. -/
+inductive Λ | p | q | r deriving DecidableEq
+
+instance : Preorder Λ where
+  le a b := a = b ∨ b = .p
+  le_refl _ := Or.inl rfl
+  le_trans _ _ _ h₁ h₂ := by
+    rcases h₂ with rfl | rfl
+    · exact h₁
+    · exact Or.inr rfl
+
+/-- The five-element frame of down-sets of `Λ`: `⊥ < ↓q, ↓r < ↓q ⊔ ↓r < ⊤`.
+Its top is join-prime (it is the only down-set containing `p`) but it is not
+a chain, and `¬↓q = ↓r`. -/
+abbrev L₅ := LowerSet Λ
+
+theorem Λ.le_iff (a b : Λ) : a ≤ b ↔ (a = b ∨ b = Λ.p) := Iff.rfl
+
+theorem L₅.eq_top_of_mem_p {u : L₅} (h : Λ.p ∈ u) : u = ⊤ := by
+  apply le_antisymm le_top
+  intro x _
+  exact u.lower (Or.inr rfl : x ≤ Λ.p) h
+
+instance : TopJoinPrime L₅ where
+  prime u v h := by
+    have hp : Λ.p ∈ u ⊔ v := by rw [h]; exact LowerSet.mem_top
+    rw [LowerSet.mem_sup_iff] at hp
+    exact hp.imp L₅.eq_top_of_mem_p L₅.eq_top_of_mem_p
+
+/-- The value `↓q`. -/
+abbrev uq : L₅ := LowerSet.Iic Λ.q
+/-- The value `↓r`. -/
+abbrev ur : L₅ := LowerSet.Iic Λ.r
+
+theorem uq_inf_ur : uq ⊓ ur = ⊥ := by
+  apply le_antisymm _ bot_le
+  intro x hx
+  rw [SetLike.mem_coe, LowerSet.mem_inf_iff, LowerSet.mem_Iic_iff, LowerSet.mem_Iic_iff,
+    Λ.le_iff, Λ.le_iff] at hx
+  cases x <;> simp_all
+
+theorem uq_ne_top : uq ≠ ⊤ := by
+  intro h
+  have : Λ.p ∈ uq := by rw [h]; exact LowerSet.mem_top
+  rw [LowerSet.mem_Iic_iff, Λ.le_iff] at this; simp at this
+
+theorem ur_ne_top : ur ≠ ⊤ := by
+  intro h
+  have : Λ.p ∈ ur := by rw [h]; exact LowerSet.mem_top
+  rw [LowerSet.mem_Iic_iff, Λ.le_iff] at this; simp at this
+
+theorem himp_bot_uq : uq ⇨ ⊥ = ur := by
+  apply le_antisymm
+  · intro x hx
+    rw [SetLike.mem_coe] at hx ⊢
+    have h1 : Λ.q ∉ (uq ⇨ ⊥ : L₅) := by
+      intro hq
+      have : Λ.q ∈ ((uq ⇨ ⊥) ⊓ uq : L₅) :=
+        LowerSet.mem_inf_iff.mpr ⟨hq, by rw [LowerSet.mem_Iic_iff]⟩
+      rw [himp_inf_self, bot_inf_eq] at this
+      exact LowerSet.notMem_bot this
+    have h2 : Λ.p ∉ (uq ⇨ ⊥ : L₅) := fun hp =>
+      h1 ((uq ⇨ ⊥ : L₅).lower (Or.inr rfl : Λ.q ≤ Λ.p) hp)
+    rw [LowerSet.mem_Iic_iff, Λ.le_iff]
+    cases x with
+    | p => exact absurd hx h2
+    | q => exact absurd hx h1
+    | r => simp
+  · rw [le_himp_iff, inf_comm, uq_inf_ur]
+
+theorem himp_bot_ur : ur ⇨ ⊥ = uq := by
+  apply le_antisymm
+  · intro x hx
+    rw [SetLike.mem_coe] at hx ⊢
+    have h1 : Λ.r ∉ (ur ⇨ ⊥ : L₅) := by
+      intro hr
+      have : Λ.r ∈ ((ur ⇨ ⊥) ⊓ ur : L₅) :=
+        LowerSet.mem_inf_iff.mpr ⟨hr, by rw [LowerSet.mem_Iic_iff]⟩
+      rw [himp_inf_self, bot_inf_eq] at this
+      exact LowerSet.notMem_bot this
+    have h2 : Λ.p ∉ (ur ⇨ ⊥ : L₅) := fun hp =>
+      h1 ((ur ⇨ ⊥ : L₅).lower (Or.inr rfl : Λ.r ≤ Λ.p) hp)
+    rw [LowerSet.mem_Iic_iff, Λ.le_iff]
+    cases x with
+    | p => exact absurd hx h2
+    | q => simp
+    | r => exact absurd hx h1
+  · rw [le_himp_iff, uq_inf_ur]
+
+theorem not_uq_ne_top : uq ⇨ ⊥ ≠ ⊤ := by rw [himp_bot_uq]; exact ur_ne_top
+
+theorem nn_uq_ne_top : (uq ⇨ ⊥) ⇨ ⊥ ≠ ⊤ := by rw [himp_bot_uq, himp_bot_ur]; exact uq_ne_top
+
+instance : Nontrivial L₅ := ⟨⟨⊥, ⊤, fun h => LowerSet.notMem_bot (h ▸ LowerSet.mem_top : Λ.p ∈ ⊥)⟩⟩
+
+/-- **The modal (K) rule for the dual box `σᵈφ := ~(σ ⬝ ~φ)`,
+`σᵈ(φ ⇒ ψ) ⇒ σᵈφ ⇒ σᵈψ` (thesis Theorem 3.2(1); the LTL rule (K◦)), is not
+derivable in the current system** (instance `σ = s`, `φ = c`, `ψ = ⊥`),
+although it is valid in every `HModel`. -/
+theorem boxK_not_derivable :
+    IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ
+      .impl (allnx true (.neg c)) (.impl (allnx true c) (allnx true .bot))) := by
+  constructor; intro h
+  have := sound (L := L₅) (u := uq) h (ρ₀ uq) ρ₀_adm true
+  rw [cm_boxK not_uq_ne_top nn_uq_ne_top] at this
+  exact bot_ne_top this
+
+/-- **`σᵈφ ⊓ σᵈψ ⇒ σᵈ(φ ⊓ ψ)` (Prop. 5.6(5)(←) for `◦`) is not derivable in the
+current system** (instance `φ = c`, `ψ = ~c`), although it is valid in every
+`HModel`. -/
+theorem boxAnd_not_derivable :
+    IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ
+      .impl (.conj (allnx true c) (allnx true (.neg c))) (allnx true (.conj c (.neg c)))) := by
+  constructor; intro h
+  have := sound (L := L₅) (u := uq) h (ρ₀ uq) ρ₀_adm true
+  rw [cm_boxAnd not_uq_ne_top nn_uq_ne_top] at this
   exact bot_ne_top this
 
 end IML.DepthOne
