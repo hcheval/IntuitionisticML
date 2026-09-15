@@ -63,7 +63,7 @@ def Pattern.add_ : Pattern Symbol := .symbol HasAddOps.add
 omit [HasCeil Symbol] [HasNatOps Symbol] in
 theorem evarLift_add : evarLift (add_ : Pattern Symbol) = add_ := rfl
 
-omit [HasCeil Symbol] [HasNatOps Symbol] in
+omit [HasCeil Symbol] [HasNatOps Symbol] [HasAddOps Symbol] in
 theorem evarLift_app (φ ψ : Pattern Symbol) : evarLift (φ ⬝ ψ) = evarLift φ ⬝ evarLift ψ := rfl
 
 /-- `Γ` contains the naturals together with the recursive equations of `add`. -/
@@ -185,7 +185,7 @@ current element is some `n` with `n ∈ 0 + n`, and `x` replaces `n` in
 def addZeroLeftAt (n : EVarIndex) : Γ ⊩ᵢ .evar n ⊓ nat_ ⇒ add_ ⬝ zero_ ⬝ .evar n :=
   .syllogism (andMonoRight addZeroLeft)
     (.syllogism pushConjInExist' (.existGen (φ₂ := add_ ⬝ zero_ ⬝ .evar n) (by
-      rw [evarLift_app, evarLift_app, evarLift_add, evarLift_zero, evarLift_evar, evarLift_evar]
+      rw [evarLift_app, evarLift_app, evarLift_add, evarLift_zero, evarLift_evar]
       exact .syllogism
         (implAnd (implAnd (.syllogism andElimRight andElimLeft) andElimLeft)
                  (.syllogism andElimRight andElimRight))
