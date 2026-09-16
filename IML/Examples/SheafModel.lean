@@ -2,7 +2,7 @@ import IML.HeytingSoundness
 import IML.DerivedRules.EqualitySemantics
 import Mathlib.Topology.Sets.Opens
 import Mathlib.Topology.Order.DenselyOrdered
-import Mathlib.Topology.Instances.Real.Defs
+import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # The sheaf of functions: a genuinely non-crisp Ω-set model
@@ -48,8 +48,8 @@ structure on `Y` — a ternary application relation `app : Y → Y → Y → Pro
 and, for each symbol, a set `sym s ⊆ Y` of values (`PointwiseData`) — the
 model interprets
 
-    ⟦s⟧(f)        = interior {x | f x ∈ sym s}          (where `f` takes values in `s`)
-    ⟦app⟧(f, g, h) = interior {x | app (f x) (g x) (h x)} (where `h` is an application of `f` to `g`).
+    ⟦s⟧(f)         = interior {x | sym s (f x)}             (`f` takes values in `s`)
+    ⟦app⟧(f, g, h) = interior {x | app (f x) (g x) (h x)}   (`h` applies `f` to `g`).
 
 These are extensional for `agree` because they are *local*: replacing `f`
 by a function that agrees with it near `x` does not change whether the
@@ -97,7 +97,7 @@ theorem coe_locus (P : X → Prop) : (locus P : Set X) = interior {x | P x} := r
 theorem locus_eq_top {P : X → Prop} (h : ∀ x, P x) : locus P = ⊤ := by
   apply Opens.ext
   rw [coe_locus, Opens.coe_top, interior_eq_univ]
-  exact fun x _ => h x
+  exact Set.eq_univ_of_forall h
 
 /-- Loci are monotone in the condition. -/
 theorem locus_mono {P Q : X → Prop} (h : ∀ x, P x → Q x) : locus P ≤ locus Q :=
@@ -222,7 +222,7 @@ theorem agree_ramp_zero : agree ramp (fun _ => 0) = negHalfLine := by
   change interior {x : ℝ | max x 0 = 0} = Set.Iio 0
   have : {x : ℝ | max x 0 = 0} = Set.Iic 0 := by
     ext x
-    simp [max_eq_right_iff]
+    simp
   rw [this, interior_Iic]
 
 /-- The ramp and zero are not distinct: they agree somewhere. -/
@@ -241,8 +241,8 @@ theorem agree_ramp_zero_ne_top : agree ramp (fun _ => 0) ≠ ⊤ := by
   intro h
   have hm : (1 : ℝ) ∈ (⊤ : Opens ℝ) := trivial
   rw [← h] at hm
-  change (1 : ℝ) ∈ Set.Iio 0 at hm
-  simp at hm
+  change (1 : ℝ) < 0 at hm
+  exact lt_irrefl _ (hm.trans zero_lt_one)
 
 -- ─────────────────────────────────────────────────────────────
 -- Syntactic equality computes to the agreement locus
@@ -257,7 +257,7 @@ pointwise data do: the definedness symbol matches every value and the
 application relation is total. The remaining symbols are unconstrained. -/
 theorem sheafModel_stdCeil (D : PointwiseData Symbol Y) (hceil : ∀ y, D.sym HasCeil.ceil y)
     (happ : ∀ a b c, D.app a b c) : (sheafModel Symbol X Y D).StdCeil :=
-  ⟨fun _ => locus_eq_top fun x => hceil _, fun _ _ _ => locus_eq_top fun x => happ _ _ _⟩
+  ⟨fun _ => locus_eq_top fun _ => hceil _, fun _ _ _ => locus_eq_top fun _ => happ _ _ _⟩
 
 open Pattern in
 /-- **Positive equality of element variables is the agreement locus.** Under
