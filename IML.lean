@@ -19,3 +19,4 @@ import IML.Examples.NatArith
 import IML.Examples.Kripke
 import IML.Examples.OpenSets
 import IML.Examples.ExcludedMiddle
+import IML.Examples.SheafModel
