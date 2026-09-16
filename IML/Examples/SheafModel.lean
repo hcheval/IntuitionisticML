@@ -195,6 +195,12 @@ theorem sheafModel_hinterp_symbol (ρ : HValuation (sheafModel Symbol X Y D)) (s
     (m : X → Y) :
     hinterp (sheafModel Symbol X Y D) ρ (.symbol s) m = locus fun x => D.sym s (m x) := rfl
 
+/-- For the data of a binary operation, `h` is an application of `f` to `g`
+exactly where `h` agrees with the pointwise operation `x ↦ op (f x) (g x)`. -/
+theorem sheafModel_appInterp_ofOp (op : Y → Y → Y) (sym : Symbol → Y → Prop) (f g h : X → Y) :
+    (sheafModel Symbol X Y (PointwiseData.ofOp op sym)).appInterp f g h =
+      agree (fun x => op (f x) (g x)) h := rfl
+
 /-- Soundness of iML over the sheaf model. -/
 theorem sheafModel_soundness {Γ : Set (Pattern Symbol)} {φ : Pattern Symbol}
     (h : Γ ⊩ᵢ φ) (hΓ : ∀ γ ∈ Γ, HValid (sheafModel Symbol X Y D) γ) :
@@ -284,6 +290,15 @@ def rampValuation (Symbol : Type) [HasCeil Symbol] :
   evar n := if n = 0 then ramp else fun _ => 0
   svar _ _ := ⊥
   svar_ext _ _ _ := inf_le_right
+
+/-- The element variable `x ↦ ramp`, evaluated at the zero function, is the
+proper open `(-∞, 0)`: an element variable whose truth value is neither `⊤`
+nor `⊥`, which `crispModel_evar_crisp` rules out in every crisp model. -/
+theorem hinterp_evar_ramp_zero :
+    hinterp (sheafModel Symbol ℝ ℝ (trivialData Symbol)) (rampValuation Symbol)
+      (.evar 0) (fun _ => 0) = negHalfLine := by
+  rw [sheafModel_hinterp_evar, agree_symm]
+  exact agree_ramp_zero
 
 open Pattern in
 /-- **The payoff.** With `x ↦ ramp` and `y ↦ 0`, the syntactic equality
