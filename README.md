@@ -213,6 +213,71 @@ except for SINGLETON.
   carrier every pattern is vacuously valid, since `HValid` quantifies over the
   points of the carrier.
 
+## Design decision: predicate propagation belongs to the definedness theory
+
+**Decided, not yet implemented.** The code is unchanged; this records the intent.
+
+`⌈·⌉` is not a truncation in this semantics. Under standard definedness
+(`D(b,m) ≔ ⨆ₐ 𝕕(a) ⊓ app(a,b,m) = ⊤`, which is exactly the content of the
+axiom `∀x.⌈x⌉` — extensionality of `appInterp` makes `D(·,m)` extensional, and
+`hull_eq_of_ext` collapses the axiom's supremum to the pointwise condition):
+
+    ⟦⌈φ⌉⟧(m)  = ⨆_b ⟦φ⟧(b)        support
+    ⟦⌊φ⌋ⁱ⟧(m) = ⨅ₐ ⟦φ⟧(a)         totality
+    ⟦⌊φ⌋⟧(m)  = ⨅ₐ ¬¬⟦φ⟧(a)       classical totality
+
+so `⌈φ⌉` is a general element of `L`, never forced into `{⊥,⊤}`. Classically
+the support lands in a two-element lattice and the distinction is invisible;
+that is why `⌊φ⌋ ≔ ~⌈~φ⌉` works there and only gives `⌊φ⌋ ⇒ ~~φ` here.
+Since `⌈·⌉` preserves `⨆` but not `⊓`, the definedness laws that survive are
+exactly the join-preservation ones, and the ones that fail are those needing
+two-valuedness — this explains the split recorded in `iml-expressivity-report.md`
+rather than leaving it a list of accidents.
+
+**Decision.** Treat the two predicate-propagation axioms as part of the
+definedness theory rather than as an extra assumption carried only where
+needed:
+
+    ∀x. ⌈x⌉                    (present)
+    ⌈φ⌉  ⇒ ⌊⌈φ⌉⌋ⁱ              (`HasPredProp.ceilPred`)
+    ⌊φ⌋ⁱ ⇒ ⌊⌊φ⌋ⁱ⌋ⁱ            (`HasPredProp.totalPred`)
+
+Rationale:
+
+- **No models are lost.** Both are valid in every model of `∀x.⌈x⌉`, since
+  `⌈φ⌉` and `⌊φ⌋ⁱ` are then constant in `m` and each axiom interprets as
+  `s ⇨ s = ⊤`. The class of models is literally unchanged; only the set of
+  derivable patterns grows.
+- **Classically they are theorems.** They follow from the membership excluded
+  middle `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉`, itself immediate from excluded middle plus
+  `ceil_or`. That principle is *refuted* here (`PointModel.cm_memEM`), so this is
+  re-assuming a classically valid fragment, not adding a new commitment.
+- **It is what the theory already wants.** `IsPred` is the single principle the
+  survey's remaining open items reduce to (Membership¬(←), Membership⇒(←),
+  Lemma 3.9(→), Lemma 3.17(←), the deduction theorem with `⌊·⌋ⁱ`), and
+  `HasPredProp` is already assumed for associativity and decidable equality on
+  the naturals.
+- **Derivability is open and likely out of reach.** Because the principle holds
+  in every model of the theory, no countermodel can refute it; the report argues
+  that no `GModel`-style model validating `singletonStrong` and definedness can
+  either. If it is later derived, the axioms become redundant rather than wrong.
+
+**Not chosen.** Excluded middle for definedness `⌈φ⌉ ⊔ ~⌈φ⌉` would force
+truncation but is unsound: it makes every support complemented, so over the
+opens of a connected space every support is `∅` or the whole space, destroying
+`IML/Examples/SheafModel.lean`. Making `⌈·⌉` a primitive constructor would buy
+unconditional soundness at the cost of a thirteenth `Pattern` constructor and a
+case in every structural definition and induction — and, since `IML/Pattern.lean`
+is shared with the archive, a second frozen file.
+
+**When implemented**, this means folding `HasPredProp` (`IML/Theories/Nat.lean`)
+into `IsDefinedness` (`IML/DerivedRules/Definedness.lean`), after which
+`natEqDecidable` and `addAssoc` stop being relative results. Note also that
+`HModel.StdCeil` (`IML/DerivedRules/EqualitySemantics.lean`) currently demands
+`∀ a b m, app(a,b,m) = ⊤`, which is strictly stronger than `D ≡ ⊤` and therefore
+stronger than the definedness axiom; it should be weakened to `D ≡ ⊤` so that
+every model of the theory satisfies it.
+
 ## Provenance
 
 The proofs were produced largely autonomously by Claude (Opus 4.6 and 4.8)
