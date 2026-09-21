@@ -184,7 +184,7 @@ theorem hvalid_singleton {C₁ C₂ : AppCtx Symbol} {n : EVarIndex}
 -- ─────────────────────────────────────────────────────────────
 -- Quantifiers
 -- ─────────────────────────────────────────────────────────────
-#check himp_eq_sSup
+
 theorem hvalid_existQuant {φ : Pattern Symbol} {n : EVarIndex}
     (m : M.Carrier) :
     hinterp M ρ (evarSubst 0 (.evar n) φ ⇒ ∃ₑ φ) m = ⊤ := by
