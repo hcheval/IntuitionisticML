@@ -46,7 +46,7 @@ premise contains both `x(1)` and `j(x(0))`, which is `⊥` for a crisp `x`. The
 point is that a context never lands on the point it looks at, so the
 "inflationary" instances `x ⊓ φ ⊓ C[x] ⇒ C[x ⊓ φ]` that broke the top-filter
 model are vacuous here. (The definedness axiom `∀x.⌈x⌉` therefore fails in
-this model, which is why it settles nothing about §3.2 of the thesis; see
+this model, which is why it settles nothing about the definedness theory; see
 the report for why no model of this kind can.)
 
 ## Why ¬¬-propagation fails
@@ -409,7 +409,7 @@ theorem nn_uq_ne_top : (uq ⇨ ⊥) ⇨ ⊥ ≠ ⊤ := by rw [himp_bot_uq, himp_
 instance : Nontrivial L₅ := ⟨⟨⊥, ⊤, fun h => LowerSet.notMem_bot (h ▸ LowerSet.mem_top : Λ.p ∈ ⊥)⟩⟩
 
 /-- **The modal (K) rule for the dual box `σᵈφ := ~(σ ⬝ ~φ)`,
-`σᵈ(φ ⇒ ψ) ⇒ σᵈφ ⇒ σᵈψ` (thesis Theorem 3.2(1); the LTL rule (K◦)), is not
+`σᵈ(φ ⇒ ψ) ⇒ σᵈφ ⇒ σᵈψ` (the LTL rule (K◦)), is not
 derivable in the current system** (instance `σ = s`, `φ = c`, `ψ = ⊥`),
 although it is valid in every `HModel`. -/
 theorem boxK_not_derivable :

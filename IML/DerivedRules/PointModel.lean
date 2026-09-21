@@ -17,13 +17,13 @@ and as `next`) and `c ↦ u`:
   just `L`-valued propositional formulas (quantifiers are the identity, element
   variables are `⊤`). The definedness axiom `∀x.⌈x⌉` holds. Refuted:
   double-negation elimination, excluded middle, `⌊φ⌋ ⇒ φ` for the classical
-  totality `⌊φ⌋ := ~⌈~φ⌉` (thesis Corollary 3.1 literally), the membership
+  totality `⌊φ⌋ := ~⌈~φ⌉`, the membership
   excluded middle `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉`, equality elimination for the
-  classical equality `⌊φ ⟺ ψ⌋` (Lemma 3.15 literally), the deduction theorem
-  (Theorem 3.3 / 4.2) with `⌊·⌋`, and Prop. 5.6 items (18), (19) and the LTL
-  rule (Fun→) for the double-negation box `◦ := ~•~`.
+  classical equality `⌊φ ⟺ ψ⌋`, the deduction theorem
+  with `⌊·⌋`, and the double-negation box laws and the LTL
+  rule (Fun→) for `◦ := ~•~`.
 * `tp`: two-point carrier with `L`-valued equality `E a b = u` for `a ≠ b`,
-  application `⊤` everywhere. Refuted: Lemma 3.9(←) `x = y ⇒ x ∈ y` (with
+  application `⊤` everywhere. Refuted: `x = y ⇒ x ∈ y` (with
   `x = y := ⌊x ⟺ y⌋`, whose value is `¬¬E x y` while `x ∈ y` has value `E x y`).
 
 These replace the corresponding results of `TopFilterModel.lean`, which
@@ -135,7 +135,7 @@ theorem cm_em (hu₁ : u ≠ ⊥) (ρ : HValuation (cm u)) :
     Bool.false_eq_true]
   rw [himp_bot_of_ne_bot hu₁, sup_bot_eq]
 
-/-- `⌊c⌋ ⇒ c` (Corollary 3.1 for the classical totality) has value `u`. -/
+/-- `⌊c⌋ ⇒ c` for the classical totality has value `u`. -/
 theorem cm_total_impl (hu₁ : u ≠ ⊥) (ρ : HValuation (cm u)) :
     hinterp (cm u) ρ (.impl ⌊c⌋ c) () = u := by
   simp only [Pattern.total, Pattern.ceil, Pattern.neg, hinterp_impl, hinterp_bot, hinterp_app,
@@ -164,7 +164,7 @@ theorem cm_eqML_elim (hu₁ : u ≠ ⊥) (ρ : HValuation (cm u)) :
   rw [himp_bot_of_ne_bot hu₁]
   simp
 
-/-- Prop. 5.6(18), `◦c ⊓ •⊤ ⇒ •(c ⊓ ⊤)`, has value `u` (`next := s`). -/
+/-- `◦c ⊓ •⊤ ⇒ •(c ⊓ ⊤)` has value `u` (`next := s`). -/
 theorem cm_allnx_nx_and (hu₁ : u ≠ ⊥) (ρ : HValuation (cm u)) :
     hinterp (cm u) ρ (.impl (.conj (allnx true c) (nx true Pattern.top))
       (nx true (.conj c Pattern.top))) () = u := by
@@ -174,7 +174,7 @@ theorem cm_allnx_nx_and (hu₁ : u ≠ ⊥) (ρ : HValuation (cm u)) :
   rw [himp_bot_of_ne_bot hu₁]
   simp
 
-/-- Prop. 5.6(19), `◦(⊤ ⇒ c) ⊓ •⊤ ⇒ •c`, has value `u`. -/
+/-- `◦(⊤ ⇒ c) ⊓ •⊤ ⇒ •c` has value `u`. -/
 theorem cm_allnx_nx_impl (hu₁ : u ≠ ⊥) (ρ : HValuation (cm u)) :
     hinterp (cm u) ρ (.impl (.conj (allnx true (.impl Pattern.top c)) (nx true Pattern.top))
       (nx true c)) () = u := by
@@ -244,7 +244,7 @@ theorem em_not_derivable : IsEmpty (defTheory ⊩ᵢ .disj c (.neg c)) := by
   rw [cm_em 1 one_ne_bot] at this
   exact one_ne_top this
 
-/-- Thesis Corollary 3.1 in its literal form, `⌊φ⌋ ⇒ φ` for `⌊φ⌋ := ~⌈~φ⌉`, is
+/-- Totality elimination in its classical form, `⌊φ⌋ ⇒ φ` for `⌊φ⌋ := ~⌈~φ⌉`, is
 not derivable from definedness in the current system (`IML.total_elim_nn`
 gives `⌊φ⌋ ⇒ ~~φ`, and `IML.totalI_impl` gives `⌊φ⌋ⁱ ⇒ φ`). -/
 theorem total_impl_not_derivable : IsEmpty (defTheory ⊩ᵢ .impl ⌊c⌋ c) := by
@@ -262,7 +262,7 @@ theorem memEM_not_derivable :
   rw [cm_memEM 1 one_ne_bot] at this
   exact one_ne_top this
 
-/-- Equality elimination (thesis Lemma 3.15) for the classical equality
+/-- Equality elimination for the classical equality
 `φ =ₘₗ ψ := ⌊φ ⟺ ψ⌋` is not derivable, already in the instance
 `(⊤ = c) ⇒ (⊤ ⇒ c)`. For the positive equality `=ⁱₘₗ` it is derivable
 (`IML.eqI_elim`, `IML.eqI_elim_ctx`). -/
@@ -273,7 +273,7 @@ theorem eqML_elim_not_derivable :
   rw [cm_eqML_elim 1 one_ne_bot] at this
   exact one_ne_top this
 
-/-- The deduction theorem of the thesis (Theorem 3.3 / 4.2), "`Γ ∪ {ψ} ⊢ φ`
+/-- The classical deduction theorem, "`Γ ∪ {ψ} ⊢ φ`
 implies `Γ ⊢ ⌊ψ⌋ ⇒ φ`" with `⌊ψ⌋ := ~⌈~ψ⌉`, is **false** for the current
 system: for `ψ = φ = c ⊔ ~c` it would give `⊢ ⌊c ⊔ ~c⌋ ⇒ c ⊔ ~c`, but
 `⌊c ⊔ ~c⌋` is derivable (the double negation of excluded middle, pushed
@@ -288,7 +288,7 @@ theorem deductionTheorem_fails :
     .syllogism (ceil_mono nnExcludedMiddle) ceil_bot
   exact em_not_derivable.false (.mp h htot)
 
-/-- Prop. 5.6(18) `◦φ₁ ⊓ •φ₂ ⇒ •(φ₁ ⊓ φ₂)` is not derivable in the current system. -/
+/-- `◦φ₁ ⊓ •φ₂ ⇒ •(φ₁ ⊓ φ₂)` is not derivable in the current system. -/
 theorem allnx_nx_and_not_derivable :
     IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ
       .impl (.conj (allnx true c) (nx true Pattern.top)) (nx true (.conj c Pattern.top))) := by
@@ -297,7 +297,7 @@ theorem allnx_nx_and_not_derivable :
   rw [cm_allnx_nx_and 1 one_ne_bot] at this
   exact one_ne_top this
 
-/-- Prop. 5.6(19) `◦(φ₁ ⇒ φ₂) ⊓ •φ₁ ⇒ •φ₂` is not derivable in the current system. -/
+/-- `◦(φ₁ ⇒ φ₂) ⊓ •φ₁ ⇒ •φ₂` is not derivable in the current system. -/
 theorem allnx_nx_impl_not_derivable :
     IsEmpty ((∅ : Set (Pattern Bool)) ⊩ᵢ
       .impl (.conj (allnx true (.impl Pattern.top c)) (nx true Pattern.top)) (nx true c)) := by
@@ -314,7 +314,7 @@ theorem allnx_impl_nx_not_derivable :
   rw [cm_allnx_impl_nx 1 one_ne_bot] at this
   exact one_ne_top this
 
-/-- Thesis Lemma 3.9(←), `x = y ⇒ x ∈ y` for the classical equality
+/-- `x = y ⇒ x ∈ y` for the classical equality
 `x =ₘₗ y := ⌊x ⟺ y⌋`, is not derivable from definedness in the current
 system: `x = y` has Heyting value `¬¬E x y` while `x ∈ y` has value `E x y`. -/
 theorem eqML_mem_not_derivable :

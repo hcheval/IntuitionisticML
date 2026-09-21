@@ -1,10 +1,10 @@
 import IML.DerivedRules.Context
 
 /-!
-# Definedness, membership and totality in iML (thesis §3.2)
+# Definedness, membership and totality in iML
 
 `⌈φ⌉ := ceil ⬝ φ` with the axiom `∀x. ⌈x⌉`. The classical development
-derives the whole membership calculus of the system P from this. Which of
+derives the whole membership calculus from this. Which of
 it survives intuitionistically?
 
 The proof system's SINGLETON rule is the positive
@@ -23,24 +23,24 @@ the rule.
   `⌈φ ⊔ ψ⌉ ⟺ ⌈φ⌉ ⊔ ⌈ψ⌉`, `⌈∃x.φ⌉ ⟺ ∃x.⌈φ⌉`, membership introduction,
   Membership∨, Membership∃, Membership∧ in both directions (†),
   Membership⇒ (†), one half of Membership¬, membership *elimination*
-  `⌈x ⊓ φ⌉ ⇒ x ⇒ φ` (†), Lemma 3.8 `⌊φ⌋ⁱ ⇒ φ` for the positive totality
-  `⌊φ⌋ⁱ := ∀x. x ∈ φ` (†), Lemma 3.14 `C[φ] ⇒ ⌈φ⌉` and Corollary 3.1
-  `φ ⇒ ⌈φ⌉` (†), Lemma 3.19 `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)` in both directions (†),
+  `⌈x ⊓ φ⌉ ⇒ x ⇒ φ` (†), totality elimination `⌊φ⌋ⁱ ⇒ φ` for the positive
+  totality `⌊φ⌋ⁱ := ∀x. x ∈ φ` (†), `C[φ] ⇒ ⌈φ⌉` and
+  `φ ⇒ ⌈φ⌉` (†), `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)` in both directions (†),
   equality introduction/reflexivity/symmetry, and `⌊φ⌋ⁱ ⇒ ⌊φ⌋`.
 
 * Weakened: for the classical totality `⌊φ⌋ := ~⌈~φ⌉` only `⌊φ⌋ ⇒ ~~φ`
-  (Corollary 3.1 gives `⌊φ⌋ ⇒ φ` classically, by DNE).
+  (classically one gets `⌊φ⌋ ⇒ φ`, by DNE).
 
 * Positive equality `φ =ⁱ ψ := ⌊φ ⟺ ψ⌋ⁱ`: reflexive, symmetric, transitive
   (`eqI_trans`), implies the classical `⌊φ ⟺ ψ⌋`, and satisfies Leibniz's law
   `(φ =ⁱ ψ) ⊓ C[φ] ⇒ C[ψ]` for every hole of the shape `Q[A[P[□]]]`
   (`eqI_leibniz`: application-free `Q`, application context `A`,
   application-free `P`, binders and both sides of `⇒` allowed in `Q` and
-  `P`); in particular `x =ⁱ φ ⇒ x ∈ φ` (Lemma 3.9(←)). Semantically it is the
+  `P`); in particular `x =ⁱ φ ⇒ x ∈ φ`. Semantically it is the
   Ω-set equality `E` (`IML/DerivedRules/EqualitySemantics.lean`).
 
-* Open: Membership¬(←) `~(x ∈ φ) ⇒ x ∈ ~φ`, Membership⇒(←), Lemma 3.9(→)
-  `x ∈ y ⇒ x =ⁱ y`, Lemma 3.17(←), and Leibniz under `μ`/`ν` or through an
+* Open: Membership¬(←) `~(x ∈ φ) ⇒ x ∈ ~φ`, Membership⇒(←),
+  `x ∈ y ⇒ x =ⁱ y`, `C[φ₁] ⊓ x ∈ φ₂ ⇒ C[φ₁ ⊓ x ∈ φ₂]`, and Leibniz under `μ`/`ν` or through an
   application below a connective below an application. All are sound, and
   all follow from one principle: that `⌈·⌉`-patterns (and their negations and
   implications) are *predicate patterns* `θ ⇒ ⌊θ⌋ⁱ` (`IsPred`,
@@ -120,10 +120,10 @@ def ceil_exist : Γ ⊩ᵢ ⌈∃ₑ φ⌉ ⟺ ∃ₑ ⌈φ⌉ :=
 def ceil_and : Γ ⊩ᵢ ⌈φ ⊓ ψ⌉ ⇒ ⌈φ⌉ ⊓ ⌈ψ⌉ := ctxAnd ceilCtx
 
 -- ─────────────────────────────────────────────────────────────
--- Totality and equality: introduction is fine (Lemma 3.5, 3.6)
+-- Totality and equality: introduction is fine
 -- ─────────────────────────────────────────────────────────────
 
-/-- Lemma 3.5 / Lemma 3.4: from `φ` infer `⌊φ⌋`. -/
+/-- Totality introduction: from `φ` infer `⌊φ⌋`. -/
 def total_intro (h : Γ ⊩ᵢ φ) : Γ ⊩ᵢ ⌊φ⌋ := doubleNegCtx ceilCtx h
 
 def total_mono (h : Γ ⊩ᵢ φ ⇒ ψ) : Γ ⊩ᵢ ⌊φ⌋ ⇒ ⌊ψ⌋ :=
@@ -153,7 +153,7 @@ def totalI_impl_total : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ ⌊φ⌋ :=
 -- Membership (Lemmas 3.7, 3.10(→), 3.11, 3.12, 3.13)
 -- ─────────────────────────────────────────────────────────────
 
-/-- Membership introduction (Lemma 3.7): from `φ` infer `x ∈ φ`. -/
+/-- Membership introduction: from `φ` infer `x ∈ φ`. -/
 def memIntro {n : EVarIndex} (h : Γ ⊩ᵢ φ) : Γ ⊩ᵢ .evar n ∈ₘₗ φ :=
   .mp (ceil_mono (implAnd implSelf (extraPremise h))) ceil_of_evar
 
@@ -177,7 +177,7 @@ def memAndIntro {n : EVarIndex} :
     Γ ⊩ᵢ (.evar n ∈ₘₗ φ) ⊓ (.evar n ∈ₘₗ ψ) ⇒ .evar n ∈ₘₗ (φ ⊓ ψ) :=
   .singletonStrong (C₁ := ceilCtx) (C₂ := ceilCtx) (n := n) (φ := φ) (ψ := ψ)
 
-/-- Membership∧ (Lemma 3.12): `x ∈ (φ ⊓ ψ) ⟺ x ∈ φ ⊓ x ∈ ψ`. -/
+/-- Membership∧: `x ∈ (φ ⊓ ψ) ⟺ x ∈ φ ⊓ x ∈ ψ`. -/
 def memAnd {n : EVarIndex} :
     Γ ⊩ᵢ .evar n ∈ₘₗ (φ ⊓ ψ) ⟺ (.evar n ∈ₘₗ φ) ⊓ (.evar n ∈ₘₗ ψ) :=
   iffIntro memAndElim memAndIntro
@@ -211,7 +211,7 @@ def memImplElimWeak {n : EVarIndex} :
   .syllogism (ceil_mono (andMonoRight k)) memNegElim
 
 -- ─────────────────────────────────────────────────────────────
--- Membership elimination (Lemma 3.8, 3.19(→))
+-- Membership elimination
 -- ─────────────────────────────────────────────────────────────
 
 /-- **Membership elimination** `⌈x ⊓ φ⌉ ⇒ x ⇒ φ`: the `C₁ := ⌈□⌉, C₂ := □`
@@ -227,27 +227,27 @@ def ceil_evar_impl_nn {n : EVarIndex} :
     Γ ⊩ᵢ ⌈.evar n ⊓ φ⌉ ⇒ .evar n ⇒ ~~φ :=
   .syllogism ceil_evar_impl (implLift dni)
 
-/-- Lemma 3.8: `(∀x. x ∈ φ) ⇒ φ`, internal form. -/
+/-- `(∀x. x ∈ φ) ⇒ φ`, internal form. -/
 def totalI_impl : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ φ :=
   implMp (.syllogism (forallMono (ceil_evar_impl (n := 0) (φ := evarLift φ)))
                      (forallImplExist (ψ := .evar 0) (χ := φ)))
          (extraPremise .existence)
 
-/-- Lemma 3.8: from `∀x. x ∈ φ` infer `φ`. -/
+/-- From `∀x. x ∈ φ` infer `φ`. -/
 def memElim (h : Γ ⊩ᵢ ⌊φ⌋ⁱ) : Γ ⊩ᵢ φ := .mp totalI_impl h
 
 /-- The double-negation form `⌊φ⌋ⁱ ⇒ ~~φ`, a corollary. -/
 def totalI_impl_nn : Γ ⊩ᵢ ⌊φ⌋ⁱ ⇒ ~~φ := .syllogism totalI_impl dni
 
-/-- Lemma 3.19(→): `∃y. (⌈y ⊓ φ⌉ ⊓ y) ⇒ φ`. -/
+/-- `∃y. (⌈y ⊓ φ⌉ ⊓ y) ⇒ φ`. -/
 def existCeilEvar_impl : Γ ⊩ᵢ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) ⇒ φ :=
   .existGen (φ₂ := φ) (.importation ceil_evar_impl)
 
 -- ─────────────────────────────────────────────────────────────
--- Definedness of what a context sees (Lemma 3.14, Corollary 3.1, 3.19(←))
+-- Definedness of what a context sees
 -- ─────────────────────────────────────────────────────────────
 
-/-- `C[x ⊓ φ] ⇒ ⌈φ⌉` (the core of Lemma 3.14): transport `x ⊓ φ` from `C`
+/-- `C[x ⊓ φ] ⇒ ⌈φ⌉` (the core of `ctx_impl_ceil`): transport `x ⊓ φ` from `C`
 into `⌈x⌉`, which definedness provides. -/
 def ctx_evar_impl_ceil (C : AppCtx Symbol) {n : EVarIndex} :
     Γ ⊩ᵢ C.fill (.evar n ⊓ φ) ⇒ ⌈φ⌉ :=
@@ -255,7 +255,7 @@ def ctx_evar_impl_ceil (C : AppCtx Symbol) {n : EVarIndex} :
     (.syllogism (.singletonAlt (C₁ := C) (C₂ := ceilCtx) (n := n) (φ := φ))
       (ceil_mono andElimRight))
 
-/-- Lemma 3.14: `C[φ] ⇒ ⌈φ⌉`. -/
+/-- `C[φ] ⇒ ⌈φ⌉`. -/
 def ctxImplDefined (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill φ ⇒ ⌈φ⌉ :=
   let s₁ : Γ ⊩ᵢ φ ⇒ ∃ₑ (.evar 0 ⊓ evarLift φ) :=
     .syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist
@@ -263,11 +263,11 @@ def ctxImplDefined (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill φ ⇒ ⌈φ⌉ :=
     (.syllogism (ctxPropagationExist C)
       (.existGen (φ₂ := ⌈φ⌉) (ctx_evar_impl_ceil C.liftEVar)))
 
-/-- Corollary 3.1: `φ ⇒ ⌈φ⌉`. Not derivable in the published system
+/-- `φ ⇒ ⌈φ⌉`. Not derivable in the published system
 (`IML.TopFilter.phi_impl_ceil_not_derivable`). -/
 def phi_impl_ceil : Γ ⊩ᵢ φ ⇒ ⌈φ⌉ := ctxImplDefined .hole
 
-/-- `⌊φ⌋ ⇒ ~~φ` for the classical totality (Corollary 3.1 gives `⌊φ⌋ ⇒ φ`
+/-- `⌊φ⌋ ⇒ ~~φ` for the classical totality (classically one gets `⌊φ⌋ ⇒ φ`
 classically, by DNE). -/
 def total_elim_nn : Γ ⊩ᵢ ⌊φ⌋ ⇒ ~~φ := contrapositive phi_impl_ceil
 
@@ -276,12 +276,12 @@ def evar_and_impl_ceil {n : EVarIndex} : Γ ⊩ᵢ .evar n ⊓ φ ⇒ ⌈.evar n
   .syllogism (implAnd implSelf (extraPremise ceil_of_evar))
     (.singletonAlt (C₁ := .hole) (C₂ := ceilCtx) (n := n) (φ := φ))
 
-/-- Lemma 3.19(←): `φ ⇒ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
+/-- `φ ⇒ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
 def phi_impl_existCeilEvar : Γ ⊩ᵢ φ ⇒ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) :=
   .syllogism (.syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist)
     (existMono (implAnd evar_and_impl_ceil andElimLeft))
 
-/-- Lemma 3.19: `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
+/-- `φ ⟺ ∃y. (⌈y ⊓ φ⌉ ⊓ y)`. -/
 def existCeilEvar_iff : Γ ⊩ᵢ φ ⟺ ∃ₑ (⌈.evar 0 ⊓ evarLift φ⌉ ⊓ .evar 0) :=
   iffIntro phi_impl_existCeilEvar existCeilEvar_impl
 
@@ -311,8 +311,8 @@ def ceil_ceil_iff : Γ ⊩ᵢ ⌈⌈φ⌉⌉ ⟺ ⌈φ⌉ := iffIntro ceil_ceil 
 def mem_mem {n : EVarIndex} : Γ ⊩ᵢ .evar n ∈ₘₗ φ ⇒ .evar n ∈ₘₗ (.evar n ∈ₘₗ φ) :=
   ceil_mono (implAnd andElimLeft evar_and_impl_ceil)
 
-/-- Lemma 3.17 (→): `C[φ₁ ⊓ x ∈ φ₂] ⇒ C[φ₁] ⊓ x ∈ φ₂`, for any pattern `x`.
-The membership conjunct leaves the context through Lemma 3.14 and
+/-- `C[φ₁ ⊓ x ∈ φ₂] ⇒ C[φ₁] ⊓ x ∈ φ₂`, for any pattern `x`.
+The membership conjunct leaves the context through `ctx_impl_ceil` and
 idempotence. -/
 def ctx_mem_elim (C : AppCtx Symbol) :
     Γ ⊩ᵢ C.fill (φ ⊓ (x ∈ₘₗ ψ)) ⇒ C.fill φ ⊓ (x ∈ₘₗ ψ) :=
@@ -342,8 +342,8 @@ def totalI_mono (h : Γ ⊩ᵢ evarLift φ ⇒ evarLift ψ) : Γ ⊩ᵢ ⌊φ⌋
 /-- **Positively total patterns propagate into contexts**:
 `⌊χ⌋ⁱ ⊓ C[ψ] ⇒ C[χ ⊓ ψ]`. Write `C[ψ]` as `∃y. C[y ⊓ ψ]`; `⌊χ⌋ⁱ` instantiates
 to `⌈y ⊓ χ⌉`, and the positive SINGLETON transports `χ` from `⌈y ⊓ χ⌉` into
-`C[y ⊓ ψ]`. This is the constructive replacement for the thesis' "predicate
-patterns propagate" (Lemma 3.17(←), Lemma 4.7). -/
+`C[y ⊓ ψ]`. This is the constructive replacement for the classical
+"predicate patterns propagate". -/
 def totalI_ctx (C : AppCtx Symbol) : Γ ⊩ᵢ ⌊φ⌋ⁱ ⊓ C.fill ψ ⇒ C.fill (φ ⊓ ψ) :=
   let s₁ : Γ ⊩ᵢ ψ ⇒ ∃ₑ (.evar 0 ⊓ evarLift ψ) :=
     .syllogism (implAnd (extraPremise .existence) implSelf) pushConjInExist
@@ -365,7 +365,7 @@ def ceil_totalI : Γ ⊩ᵢ ⌈⌊φ⌋ⁱ⌉ ⇒ ⌊φ⌋ⁱ :=
     (.syllogism (ceil_mono (forallElimLift (φ := ⌈.evar 0 ⊓ evarLift φ⌉))) ceil_ceil)
 
 -- ─────────────────────────────────────────────────────────────
--- Positive equality `φ =ⁱ ψ := ⌊φ ⟺ ψ⌋ⁱ` and its elimination (Lemma 3.15)
+-- Positive equality `φ =ⁱ ψ := ⌊φ ⟺ ψ⌋ⁱ` and its elimination
 -- ─────────────────────────────────────────────────────────────
 
 /-- Positive (intuitionistic) equality `⌊φ ⟺ ψ⌋ⁱ = ∀x. x ∈ (φ ⟺ ψ)`, with
@@ -384,12 +384,12 @@ def eqI_symm : Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⇒ (ψ =ⁱₘₗ φ) := totalI_mon
 /-- Positive equality implies the classical one. -/
 def eqI_impl_eqML : Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⇒ (φ =ₘₗ ψ) := totalI_impl_total
 
-/-- Lemma 3.15 for application contexts: `φ₁ =ⁱ φ₂ ⊓ C[φ₁] ⇒ C[φ₂]`. -/
+/-- Equality elimination for application contexts: `φ₁ =ⁱ φ₂ ⊓ C[φ₁] ⇒ C[φ₂]`. -/
 def eqI_elim_ctx (C : AppCtx Symbol) :
     Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⊓ C.fill φ ⇒ C.fill ψ :=
   .syllogism (totalI_ctx C) (ctxFraming C (.syllogism (andMonoLeft andElimLeft) andMp))
 
-/-- Lemma 3.15, hole case: `φ₁ =ⁱ φ₂ ⇒ φ₁ ⇒ φ₂`. -/
+/-- Equality elimination, hole case: `φ₁ =ⁱ φ₂ ⇒ φ₁ ⇒ φ₂`. -/
 def eqI_elim : Γ ⊩ᵢ (φ =ⁱₘₗ ψ) ⇒ φ ⇒ ψ := .exportation (eqI_elim_ctx .hole)
 
 -- ─────────────────────────────────────────────────────────────
@@ -560,10 +560,10 @@ def iffLeibniz (P : PCtx Symbol) (φ ψ : Pattern Symbol) :
       (.syllogism (andMonoRight forallElimLift) (iffLeibniz P' (evarLift φ) (evarLift ψ)))
 
 -- ─────────────────────────────────────────────────────────────
--- Leibniz's law for positive equality (Lemma 3.15, general positions)
+-- Leibniz's law for positive equality (general positions)
 -- ─────────────────────────────────────────────────────────────
 
-/-- Lemma 3.15 for a hole below an application context `A` and an
+/-- Equality elimination for a hole below an application context `A` and an
 application-free context `P`: `(φ =ⁱ ψ) ⊓ A[P[φ]] ⇒ A[P[ψ]]`. The equality
 enters `A` as the plain equivalence `φ ⟺ ψ` (`totalI_ctx`), which then
 replaces `φ` by `ψ` inside `P` (`iffLeibniz`). -/
@@ -618,7 +618,7 @@ def eqI_leibniz (Q : PCtx Symbol) (A : AppCtx Symbol) (P : PCtx Symbol) (φ ψ :
       exact .syllogism (andMonoRight forallElimLift)
         (eqI_leibniz Q' A.liftEVar (P.liftFrom 0) (evarLift φ) (evarLift ψ)))
 
-/-- Lemma 3.9(←) for positive equality: `x =ⁱ φ ⇒ x ∈ φ`. (For the classical
+/-- `x =ⁱ φ ⇒ x ∈ φ` for positive equality. (For the classical
 equality this direction fails: `IML.PointModel.eqML_mem_not_derivable`.) -/
 def eqI_impl_mem {n : EVarIndex} : Γ ⊩ᵢ (.evar n =ⁱₘₗ φ) ⇒ .evar n ∈ₘₗ φ :=
   implMp (.exportation (eqI_leibniz_in ceilCtx (.conjR (.evar n) .hole)))
@@ -631,10 +631,10 @@ def eqI_impl_mem {n : EVarIndex} : Γ ⊩ᵢ (.evar n =ⁱₘₗ φ) ⇒ .evar n
 /-- `θ` is a *predicate pattern* when it implies its own positive totality,
 `θ ⇒ ⌊θ⌋ⁱ` (the converse `⌊θ⌋ⁱ ⇒ θ` always holds, `totalI_impl`). Semantically
 this says `θ` has the same truth value at every point. Classically every
-`⌈·⌉`-pattern is one (thesis Lemma 3.17/4.7); intuitionistically, whether
+`⌈·⌉`-pattern is one; intuitionistically, whether
 `⌈φ⌉ ⇒ ⌊⌈φ⌉⌋ⁱ` is derivable is the open question behind Membership¬(←),
-Membership⇒(←), Lemma 3.9(→), Lemma 3.17(←) and the deduction theorem with
-`⌊·⌋ⁱ` (see the report). It is sound in every `HModel`. -/
+Membership⇒(←), `x ∈ y ⇒ x =ⁱ y`, `C[φ₁] ⊓ x ∈ φ₂ ⇒ C[φ₁ ⊓ x ∈ φ₂]` and the
+deduction theorem with `⌊·⌋ⁱ` (see the report). It is sound in every `HModel`. -/
 abbrev IsPred (Γ : Set (Pattern Symbol)) (θ : Pattern Symbol) : Type := Γ ⊩ᵢ θ ⇒ ⌊θ⌋ⁱ
 
 /-- Every positive totality is a predicate pattern *up to the outer `⌊·⌋ⁱ`*:
@@ -645,13 +645,13 @@ def pred_ctx {θ : Pattern Symbol} (h : IsPred Γ θ) (C : AppCtx Symbol) :
     Γ ⊩ᵢ θ ⊓ C.fill ψ ⇒ C.fill (θ ⊓ ψ) :=
   .syllogism (andMonoLeft h) (totalI_ctx C)
 
-/-- Lemma 3.17(←) in the form `C[φ₁] ⊓ x ∈ φ₂ ⇒ C[φ₁ ⊓ x ∈ φ₂]`, given that
+/-- `C[φ₁] ⊓ x ∈ φ₂ ⇒ C[φ₁ ⊓ x ∈ φ₂]`, given that
 `x ∈ φ₂` is a predicate pattern. -/
 def ctx_mem_intro_of_pred (h : IsPred Γ (x ∈ₘₗ ψ)) (C : AppCtx Symbol) :
     Γ ⊩ᵢ C.fill φ ⊓ (x ∈ₘₗ ψ) ⇒ C.fill (φ ⊓ (x ∈ₘₗ ψ)) :=
   .syllogism .permutationAnd (.syllogism (pred_ctx h C) (ctxFraming C .permutationAnd))
 
-/-- Lemma 3.9(→), `x ∈ y ⇒ x =ⁱ y`, given that (the lifted) `x ∈ y` is a
+/-- `x ∈ y ⇒ x =ⁱ y`, given that (the lifted) `x ∈ y` is a
 predicate pattern. -/
 def mem_impl_eqI_of_pred {n m : EVarIndex}
     (h : IsPred Γ (evarLift (.evar n ∈ₘₗ .evar m))) :

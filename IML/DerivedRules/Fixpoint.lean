@@ -3,13 +3,13 @@ import IML.DerivedRules.FOL
 /-!
 # Derived fixpoint rules of iML
 
-Chapter 4 of the thesis (Lemmas 4.2, 4.3, 4.6 and the ν-duals). Since `ν`
-is primitive in iML with its own PREFIXPOINT/KNASTER-TARSKI rules
+The standard fixpoint derivations — monotonicity, unfolding and the ν-duals.
+Since `ν` is primitive in iML with its own PREFIXPOINT/KNASTER-TARSKI rules
 (`postFixpoint`, `park`), the classical detour `ν = ¬μ¬` and its three
 negations disappear entirely; the μ and ν results are perfectly symmetric.
 
 Also: `μX.X ⟺ ⊥`, which shows that taking `⊥` primitive (as this
-formalization does) versus `⊥ := μX.X` (as the thesis does) makes no
+formalization does) versus the alternative `⊥ := μX.X` makes no
 difference to derivability.
 -/
 
@@ -82,7 +82,7 @@ theorem svarLift_positive (φ : Pattern Symbol) : SVarPositive (svarLift φ) 0 :
   (svarLiftFrom_pos_neg φ 0).1
 
 -- ─────────────────────────────────────────────────────────────
--- μ: pre-fixpoint, induction, monotonicity (Lemma 4.3)
+-- μ: pre-fixpoint, induction, monotonicity
 -- ─────────────────────────────────────────────────────────────
 
 variable {Γ : Set (Pattern Symbol)} {φ ψ : Pattern Symbol}
@@ -96,12 +96,12 @@ def muMono (hpos : SVarPositive ψ 0) (h : Γ ⊩ᵢ φ[0 ₛ↦ μ ψ] ⇒ ψ[0
     Γ ⊩ᵢ μ φ ⇒ μ ψ :=
   .knasterTarski (.syllogism h (.preFixpoint hpos))
 
-/-- Lemma 4.3: `φ ⇒ ψ` implies `μX.φ ⇒ μX.ψ`. -/
+/-- Monotonicity of `μ`: `φ ⇒ ψ` implies `μX.φ ⇒ μX.ψ`. -/
 def muMonoFromImpl (hpos : SVarPositive ψ 0) (h : Γ ⊩ᵢ φ ⇒ ψ) : Γ ⊩ᵢ μ φ ⇒ μ ψ :=
   muMono hpos (.svSubst h)
 
 -- ─────────────────────────────────────────────────────────────
--- ν: post-fixpoint, coinduction, monotonicity (Lemma 4.2, dual of 4.3)
+-- ν: post-fixpoint, coinduction, monotonicity (dual to the μ case)
 -- ─────────────────────────────────────────────────────────────
 
 def nuPostFixpoint (hpos : SVarPositive φ 0) : Γ ⊩ᵢ ν φ ⇒ φ[0 ₛ↦ ν φ] :=
@@ -123,7 +123,7 @@ def nuMonoFromImpl (hpos : SVarPositive φ 0) (h : Γ ⊩ᵢ φ ⇒ ψ) : Γ ⊩
 theorem svarSubst_svar_zero (ψ : Pattern Symbol) : svarSubst 0 ψ (.svar 0) = ψ := by
   simp [svarSubst]
 
-/-- `μX.X ⇒ φ` for every `φ`: the thesis' definition `⊥ := μX.X` and the
+/-- `μX.X ⇒ φ` for every `φ`: the alternative definition `⊥ := μX.X` and the
 primitive `⊥` of this formalization are interderivable (`muSvarIffBot`). -/
 def muSvar : Γ ⊩ᵢ μ (.svar 0) ⇒ φ :=
   .knasterTarski (by rw [svarSubst_svar_zero]; exact implSelf)
@@ -136,12 +136,13 @@ def nuSvar : Γ ⊩ᵢ φ ⇒ ν (.svar 0) :=
 def nuSvarIffTop : Γ ⊩ᵢ ν (.svar 0 : Pattern Symbol) ⟺ ⊤ₘ := iffIntro implTop nuSvar
 
 -- ─────────────────────────────────────────────────────────────
--- μ-unfolding needs syntactic monotonicity (Lemma 4.5), which we only
--- state as a hypothesis here.  Given `svarMono` for `φ`, both directions
--- of Lemma 4.6 follow.
+-- μ-unfolding needs syntactic monotonicity, which we only state as a
+-- hypothesis here.  Given `svarMono` for `φ`, both directions of the
+-- unfolding equivalence follow.
 -- ─────────────────────────────────────────────────────────────
 
-/-- Lemma 4.6 (→), assuming the substitution instance of Lemma 4.5 for `φ`. -/
+/-- μ-unfolding (→), assuming the substitution instance of syntactic
+monotonicity for `φ`. -/
 def muUnfoldLeft (hmono : Γ ⊩ᵢ φ[0 ₛ↦ φ[0 ₛ↦ μ φ]] ⇒ φ[0 ₛ↦ μ φ]) :
     Γ ⊩ᵢ μ φ ⇒ φ[0 ₛ↦ μ φ] :=
   .knasterTarski hmono

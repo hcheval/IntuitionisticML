@@ -2,9 +2,9 @@ import IML.DerivedRules.Context
 import IML.DerivedRules.Fixpoint
 
 /-!
-# Transition systems and temporal operators (thesis §5.7, Proposition 5.6)
+# Transition systems and temporal operators
 
-With one symbol `next` ("one-path next" `•`) we define, as in the thesis,
+With one symbol `next` ("one-path next" `•`) we define, as usual,
 
 * `nx φ := next ⬝ φ`                        (`•φ`)
 * `allnx φ := ~nx(~φ)`                      (`◦φ`, the dual box)
@@ -13,11 +13,11 @@ With one symbol `next` ("one-path next" `•`) we define, as in the thesis,
 * `wevt φ := νX. φ ⊔ •X`                    (`⋄w φ`, weak eventually)
 * `wf := μX. ◦X`                            (well-foundedness)
 
-and check which items of Proposition 5.6 survive. Everything about `•`, `⋄`
-and `⋄w` (the *existential* side) goes through unchanged. On the universal
+and check which of the standard temporal laws survive. Everything about `•`,
+`⋄` and `⋄w` (the *existential* side) goes through unchanged. On the universal
 side `◦`, `□` only the "half" that follows by monotonicity and coinduction
-survives; the halves that need `◦(φ ⊓ ψ) ⇐ ◦φ ⊓ ◦ψ` (item 5), the Barcan
-direction of item 6, item 17(←) `¬⋄¬φ ⇒ □φ`, and item 18 all fail, because
+survives; the halves that need `◦(φ ⊓ ψ) ⇐ ◦φ ⊓ ◦ψ`, the Barcan direction of
+`◦∀x.φ ⇐ ∀x.◦φ`, `¬⋄¬φ ⇒ □φ`, and `◦φ₁ ⊓ •φ₂ ⇒ •(φ₁ ⊓ φ₂)` all fail, because
 `◦ := ~•~` is the *double-negation* box in the Heyting semantics.
 -/
 
@@ -66,7 +66,7 @@ theorem wf_body_pos : SVarPositive (allnx next (.svar 0 : Pattern Symbol)) 0 :=
 variable {Γ : Set (Pattern Symbol)} {φ ψ : Pattern Symbol}
 
 -- ─────────────────────────────────────────────────────────────
--- • : items (1)–(3), (10)
+-- • : monotonicity, ⊥, ⊔ and ∃ propagation
 -- ─────────────────────────────────────────────────────────────
 
 def nxMono (h : Γ ⊩ᵢ φ ⇒ ψ) : Γ ⊩ᵢ nx next φ ⇒ nx next ψ := .framingRight h
@@ -81,7 +81,7 @@ def nxExist : Γ ⊩ᵢ nx next (∃ₑ φ) ⟺ ∃ₑ (nx next φ) :=
   iffIntro (ctxPropagationExist (nxCtx next)) (ctxPropagationExistR (nxCtx next))
 
 -- ─────────────────────────────────────────────────────────────
--- ◦ : items (4), (5→), (6←), (10)
+-- ◦ : monotonicity, ⊤, and the surviving halves of ⊓ and ∀
 -- ─────────────────────────────────────────────────────────────
 
 def allnxMono (h : Γ ⊩ᵢ φ ⇒ ψ) : Γ ⊩ᵢ allnx next φ ⇒ allnx next ψ :=
@@ -100,7 +100,7 @@ def allnxForall : Γ ⊩ᵢ allnx next (∀ₑ φ) ⇒ ∀ₑ (allnx next φ) :=
   boxConverseBarcan (nxCtx next)
 
 -- ─────────────────────────────────────────────────────────────
--- ⋄ : items (7), (10), (11), (12), (23)
+-- ⋄ : unfolding, induction, monotonicity, idempotence, ⊔
 -- ─────────────────────────────────────────────────────────────
 
 def evtUnfold : Γ ⊩ᵢ φ ⊔ nx next (evt next φ) ⇒ evt next φ := by
@@ -131,7 +131,7 @@ def evtOrR : Γ ⊩ᵢ evt next φ ⊔ evt next ψ ⇒ evt next (φ ⊔ ψ) :=
   orElim (evtMono next orIntroLeft) (evtMono next orIntroRight)
 
 -- ─────────────────────────────────────────────────────────────
--- □ : items (8), (10), (14), (15→), (17→), (23)
+-- □ : unfolding, coinduction, monotonicity, ⊓, idempotence, □φ ⇒ ~⋄~φ
 -- ─────────────────────────────────────────────────────────────
 
 def alwUnfold : Γ ⊩ᵢ alw next φ ⇒ φ ⊓ allnx next (alw next φ) := by
@@ -164,7 +164,7 @@ def alwToNotEvtNot : Γ ⊩ᵢ alw next φ ⇒ ~(evt next (~φ)) :=
   flip (evtInduction next (orElim (contrapositive (alwElim next)) (flip (alwNext next))))
 
 -- ─────────────────────────────────────────────────────────────
--- ⋄w : item (9), (10), and WF
+-- ⋄w : unfolding, coinduction, and WF
 -- ─────────────────────────────────────────────────────────────
 
 def wevtUnfold : Γ ⊩ᵢ wevt next φ ⇒ φ ⊔ nx next (wevt next φ) := by
@@ -193,7 +193,7 @@ def wfFold : Γ ⊩ᵢ allnx next (wf next) ⇒ wf next := by
   rwa [wf_body_subst] at h
 
 -- ─────────────────────────────────────────────────────────────
--- Thesis Theorem 5.6: Peano induction = (No Junk) + KNASTER-TARSKI
+-- Peano induction = (No Junk) + KNASTER-TARSKI
 -- ─────────────────────────────────────────────────────────────
 
 /-- With `⊤Nat := μD. zero ⊔ succ(D)`, which is `evt succ zero`, structural

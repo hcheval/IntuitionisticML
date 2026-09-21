@@ -408,7 +408,7 @@ def addAssoc (a b : EVarIndex) : Γ ⊩ᵢ nat_ ⇒ assocPred a b :=
 
 /-- Associativity, pointwise: `x ⊓ nat ⇒ ⌈(a+b)+x ⊓ a+(b+x)⌉`. From
 `addAssoc`: the current element is some `n`, so `x ∈ n`, hence `x =ⁱ n`
-(Lemma 3.9, from the `⌈·⌉` scheme), and `n` is replaced by `x` in both holes. -/
+(`evarMemEqI`, from the `⌈·⌉` scheme), and `n` is replaced by `x` in both holes. -/
 def addAssocAt (a b n : EVarIndex) :
     Γ ⊩ᵢ .evar n ⊓ nat_ ⇒
       ⌈lsum (.evar a) (.evar b) (.evar n) ⊓ rsum (.evar a) (.evar b) (.evar n)⌉ :=

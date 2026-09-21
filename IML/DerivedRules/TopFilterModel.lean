@@ -38,14 +38,14 @@ Concretely (`L := ℕ∞`, `u := 1`):
   in `◦φ ⊓ ◦ψ ⇒ ◦(φ ⊓ ψ)`, and in `~⋄~φ ⇒ □~~φ`).
 * `dne_not_derivable`: `~~φ ⇒ φ` (axiom p3) is not derivable.
 * `phi_impl_ceil_not_derivable`: with the definedness axiom `∀x.⌈x⌉`,
-  `φ ⇒ ⌈φ⌉` (thesis Lemma 3.14 / Corollary 3.1) is not derivable. **In the
+  `φ ⇒ ⌈φ⌉` is not derivable. **In the
   current system it is** (`IML.phi_impl_ceil`); this is the main payoff of
   the positive rule.
 * `memNegIntro_not_derivable`: with definedness, Membership¬(←)
   `~(x ∈ φ) ⇒ x ∈ ~φ` is not derivable.
 * `memEM_not_derivable`: the membership excluded middle
-  `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉` (the classical step behind all of §3.2) is
-  not derivable.
+  `⌈x⌉ ⇒ ⌈x ⊓ φ⌉ ⊔ ⌈x ⊓ ~φ⌉` (the classical step behind the whole definedness
+  theory) is not derivable.
 
 Whether the statements other than `φ ⇒ ⌈φ⌉` are derivable in the current
 system is not settled by this file (`~~φ ⇒ φ` and `φ ⊔ ~φ` are refuted by
@@ -671,7 +671,7 @@ def defTheory : Set (Pattern Bool) := {.forallP (.app s x₀)}
 theorem defTheory_valid (u : ℕ∞) : ∀ γ ∈ defTheory, TValid (cm u) γ := by
   intro γ hγ; rw [defTheory, Set.mem_singleton_iff] at hγ; subst hγ; exact cm_definedness u
 
-/-- Thesis Lemma 3.14 / Corollary 3.1, `φ ⇒ ⌈φ⌉`, is not derivable from
+/-- `φ ⇒ ⌈φ⌉` is not derivable from
 definedness in the published system. In the current system, with the positive
 SINGLETON, it is derivable: `IML.phi_impl_ceil`. -/
 theorem phi_impl_ceil_not_derivable :
@@ -704,7 +704,7 @@ theorem em_not_derivable : IsEmpty (defTheory ⊩₀ .disj c (.neg c)) := by
   rw [cm_em _ one_ne_bot] at this
   exact one_ne_top this
 
-/-- The deduction theorem of the thesis (Theorem 3.3 / Theorem 4.2), in the
+/-- The classical deduction theorem, in the
 form "`Γ ∪ {ψ} ⊢ φ` implies `Γ ⊢ ⌊ψ⌋ ⇒ φ`" with `⌊ψ⌋ := ~⌈~ψ⌉`, is **false**
 for the published system: applied to `ψ = φ = c ⊔ ~c` it would yield
 `⊢ ⌊c ⊔ ~c⌋ ⇒ c ⊔ ~c`, but `⌊c ⊔ ~c⌋` is derivable (it is the double negation

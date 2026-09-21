@@ -83,27 +83,27 @@ lake build
 
 ## Contents
 
-| File | Paper | What it contains |
-|---|---|---|
-| `IML/Pattern.lean` | §2 | The 12-constructor `Pattern` type, de Bruijn indices, notations |
-| `IML/Substitution.lean` | §2 | Lifting and substitution for element and set variables |
-| `IML/Proof.lean` | §2.2, Fig. 1 (SINGLETON differs) | `SVarPositive`/`SVarNegative`, application contexts `AppCtx`, the Hilbert system `Proof` with the positive `singletonStrong`, and the derived rules `Proof.singletonAlt`, `Proof.botProp`, `Proof.singleton` (the paper's SINGLETON) |
-| `IML/HeytingSemantics.lean` | §2.1 | `HModel` (with `L`-valued equality `E`), extensionality `Extensional`/`HModel.Ext`, `HValuation`, the interpretation `hinterp : Pattern → Carrier → L`, the key lemma `hinterp_ext`, validity `HValid` |
-| `IML/HInterpCommutation.lean` | §3, Lemma 2 | Substitution lemma: `hinterp_svarSubst`, `hinterp_evarSubst` |
-| `IML/HeytingSoundness.lean` | §3, Lemma 1, Lemma 3, Theorem 2 | Monotonicity (`hinterp_mono_pos`/`hinterp_mono_neg`), the context kernel lemma `hinterp_fill` (`⟦C[X]⟧ m = ⨆ a, ⟦X⟧ a ⊓ K_C a m`), `hvalid_singletonStrong`, one validity lemma per rule, and `soundness` |
-| `IML/LFPSoundness.lean` | §3 | Alternative treatment of the fixpoint rules via Mathlib's `OrderHom.lfp`/`OrderHom.gfp`, composed with the extensional hull `HModel.hull` (`soundness_lfp`) |
-| `IML/CrispModels.lean` | §2.1 | The paper's models as the special case `crispModel` with `E a b = if a = b then ⊤ else ⊥`; in them element variables are crisp (`crispModel_evar_crisp`) |
-| `IML/Crisp/Proof.lean` | §2.2, Fig. 1 (as published) | The original proof system with the negative SINGLETON `singleton` — namespace `IML.Crisp`, text preserved |
-| `IML/Crisp/HeytingSemantics.lean` | §2.1 (as published) | The original `HModel` with decidable equality, `HValuation`, `hinterp`, `HValid` — namespace `IML.Crisp`, text preserved |
-| `IML/Crisp/HInterpCommutation.lean` | §3, Lemma 2 (as published) | The original substitution lemmas `hinterp_svarSubst`, `hinterp_evarSubst` |
-| `IML/Crisp/HeytingSoundness.lean` | §3, Theorem 2 (as published) | The original monotonicity lemmas, validity lemmas, and `IML.Crisp.soundness` |
-| `IML/Crisp/LFPSoundness.lean` | §3 (as published) | The original lfp/gfp treatment of the fixpoint rules (`IML.Crisp.soundness_lfp`) |
-| `IML/Crisp/Bridge.lean` | — | The bridge: `Proof.toGeneral` (archived derivations are current derivations), `hinterp_toGeneral`, `hvalid_iff`, and `soundness_of_general` (the crisp soundness theorem as an instance of the general one) |
-| `IML/Examples/Kripke.lean` | — | Kripke models as the crisp instance `L = Opens (WithUpperSet W)`; forcing relation and persistence |
-| `IML/Examples/OpenSets.lean` | — | Topological models `L = Opens X`; discrete and Alexandrov (constant-domain Kripke) instances |
-| `IML/Examples/ExcludedMiddle.lean` | — | A non-crisp countermodel to `x ∨ ¬x` and the theorem `excludedMiddle_not_derivable` |
-| `IML/SingletonAlt/` | — | The three singleton rules compared: soundness of the positive variants, `ProofCore` (iML with a pluggable singleton scheme), and the independence results `singleton ⊬ singletonStrong` (intuitionistically) and `singletonAlt ⊬ singleton` (even classically); see `IML/SingletonAlt.lean` |
-| `IML/DerivedRules/` | — | Derived rules (propositional, first-order, contexts, fixpoints, definedness, membership and positive equality, temporal) and three families of countermodels: the top-filter model (published system only), small chain-valued `HModel`s, and the depth-one model, a generalized model validating every rule of the current system including `singletonStrong` (`IML.DepthOne.valid_strong`) and refuting ¬¬-propagation and the modal (K) rule, so the current system is incomplete for its Heyting semantics (`IML.DepthOne.nnPropagation_not_derivable`); see `IML/DerivedRules.lean` and `iml-expressivity-report.md` |
+| File | What it contains |
+|---|---|
+| `IML/Pattern.lean` | The 12-constructor `Pattern` type, de Bruijn indices, notations |
+| `IML/Substitution.lean` | Lifting and substitution for element and set variables |
+| `IML/Proof.lean` | `SVarPositive`/`SVarNegative`, application contexts `AppCtx`, the Hilbert system `Proof` with the positive `singletonStrong`, and the derived rules `Proof.singletonAlt`, `Proof.botProp`, `Proof.singleton` (the published SINGLETON) |
+| `IML/HeytingSemantics.lean` | `HModel` (with `L`-valued equality `E`), extensionality `Extensional`/`HModel.Ext`, `HValuation`, the interpretation `hinterp : Pattern → Carrier → L`, the key lemma `hinterp_ext`, validity `HValid` |
+| `IML/HInterpCommutation.lean` | Substitution lemma: `hinterp_svarSubst`, `hinterp_evarSubst` |
+| `IML/HeytingSoundness.lean` | Monotonicity (`hinterp_mono_pos`/`hinterp_mono_neg`), the context kernel lemma `hinterp_fill` (`⟦C[X]⟧ m = ⨆ a, ⟦X⟧ a ⊓ K_C a m`), `hvalid_singletonStrong`, one validity lemma per rule, and `soundness` |
+| `IML/LFPSoundness.lean` | Alternative treatment of the fixpoint rules via Mathlib's `OrderHom.lfp`/`OrderHom.gfp`, composed with the extensional hull `HModel.hull` (`soundness_lfp`) |
+| `IML/CrispModels.lean` | The published models as the special case `crispModel` with `E a b = if a = b then ⊤ else ⊥`; in them element variables are crisp (`crispModel_evar_crisp`) |
+| `IML/Crisp/Proof.lean` | The original proof system with the negative SINGLETON `singleton` — namespace `IML.Crisp`, text preserved |
+| `IML/Crisp/HeytingSemantics.lean` | The original `HModel` with decidable equality, `HValuation`, `hinterp`, `HValid` — namespace `IML.Crisp`, text preserved |
+| `IML/Crisp/HInterpCommutation.lean` | The original substitution lemmas `hinterp_svarSubst`, `hinterp_evarSubst` |
+| `IML/Crisp/HeytingSoundness.lean` | The original monotonicity lemmas, validity lemmas, and `IML.Crisp.soundness` |
+| `IML/Crisp/LFPSoundness.lean` | The original lfp/gfp treatment of the fixpoint rules (`IML.Crisp.soundness_lfp`) |
+| `IML/Crisp/Bridge.lean` | The bridge: `Proof.toGeneral` (archived derivations are current derivations), `hinterp_toGeneral`, `hvalid_iff`, and `soundness_of_general` (the crisp soundness theorem as an instance of the general one) |
+| `IML/Examples/Kripke.lean` | Kripke models as the crisp instance `L = Opens (WithUpperSet W)`; forcing relation and persistence |
+| `IML/Examples/OpenSets.lean` | Topological models `L = Opens X`; discrete and Alexandrov (constant-domain Kripke) instances |
+| `IML/Examples/ExcludedMiddle.lean` | A non-crisp countermodel to `x ∨ ¬x` and the theorem `excludedMiddle_not_derivable` |
+| `IML/SingletonAlt/` | The three singleton rules compared: soundness of the positive variants, `ProofCore` (iML with a pluggable singleton scheme), and the independence results `singleton ⊬ singletonStrong` (intuitionistically) and `singletonAlt ⊬ singleton` (even classically); see `IML/SingletonAlt.lean` |
+| `IML/DerivedRules/` | Derived rules (propositional, first-order, contexts, fixpoints, definedness, membership and positive equality, temporal) and three families of countermodels: the top-filter model (published system only), small chain-valued `HModel`s, and the depth-one model, a generalized model validating every rule of the current system including `singletonStrong` (`IML.DepthOne.valid_strong`) and refuting ¬¬-propagation and the modal (K) rule, so the current system is incomplete for its Heyting semantics (`IML.DepthOne.nnPropagation_not_derivable`); see `IML/DerivedRules.lean` and `iml-expressivity-report.md` |
 
 The main theorem is `IML.soundness` in `IML/HeytingSoundness.lean`:
 
@@ -172,8 +172,8 @@ except for SINGLETON.
   rule intuitionistically (`Proof.singleton`), but not conversely
   (`IML.strong_not_from_singleton`: a model of the negative rule refutes the
   positive one), so it is a genuine strengthening, whereas classically the two
-  are interderivable; (iii) it is what the definedness theory of Chen's
-  thesis needs intuitionistically — with the negative rule alone, `φ → ⌈φ⌉`
+  are interderivable; (iii) it is what the definedness theory
+  needs intuitionistically — with the negative rule alone, `φ → ⌈φ⌉`
   is underivable (`IML.TopFilter.phi_impl_ceil_not_derivable`), with the
   positive rule membership elimination, Membership∧ and `C[φ] → ⌈φ⌉` are
   derived in `IML/DerivedRules/Definedness.lean`. Every derivation of the
@@ -254,7 +254,8 @@ Rationale:
   re-assuming a classically valid fragment, not adding a new commitment.
 - **It is what the theory already wants.** `IsPred` is the single principle the
   survey's remaining open items reduce to (Membership¬(←), Membership⇒(←),
-  Lemma 3.9(→), Lemma 3.17(←), the deduction theorem with `⌊·⌋ⁱ`), and
+  `x ∈ y ⇒ x =ⁱ y`, `C[φ₁] ⊓ x ∈ φ₂ ⇒ C[φ₁ ⊓ x ∈ φ₂]`, the deduction theorem
+  with `⌊·⌋ⁱ`), and
   `HasPredProp` is already assumed for associativity and decidable equality on
   the naturals.
 - **Derivability is open and likely out of reach.** Because the principle holds

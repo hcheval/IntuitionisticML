@@ -36,7 +36,7 @@ the rules of `IML.Proof`; nothing is assumed about models.
   is constructive.
 * Turning a membership fact `x ∈ succ m` into an equality `succ m =ⁱ x`
   is *not* available from the classical-shaped functionality axiom
-  `∃y. succ m =ⁱ y`: it would need Lemma 3.9(→) `x ∈ y ⇒ x =ⁱ y`, whose
+  `∃y. succ m =ⁱ y`: it would need `x ∈ y ⇒ x =ⁱ y`, whose
   derivability is open in iML (`IML.mem_impl_eqI_of_pred`). The class
   `IsNatTheoryPos` adds functionality in its *positive* form
   (`x ∈ zero ⇒ zero =ⁱ x`, `x ∈ succ m ⇒ succ m =ⁱ x`: any element of the
@@ -169,7 +169,7 @@ class IsNatTheory (Symbol : Type) [HasCeil Symbol] [HasNatOps Symbol]
 /-- `Γ` also contains functionality of the constructors in the *positive*
 form "any element of the singleton is all of it". Classically these follow
 from `IsNatTheory`; intuitionistically the derivation would go through
-Lemma 3.9(→), which is open. -/
+`x ∈ y ⇒ x =ⁱ y`, which is open. -/
 class IsNatTheoryPos (Symbol : Type) [HasCeil Symbol] [HasNatOps Symbol]
     (Γ : Set (Pattern Symbol)) : Prop extends IsNatTheory Symbol Γ where
   /-- `∀x. x ∈ zero ⇒ zero =ⁱ x`. -/
@@ -408,7 +408,7 @@ def eqI_leibniz_ceil₂ (A₁ A₂ : AppCtx Symbol) {φ ψ : Pattern Symbol} :
   .syllogism (implAnd andElimLeft (eqI_leibniz_ceil (.conjL .hole (A₂.fill φ)) A₁))
     (eqI_leibniz_ceil (.conjR (A₁.fill ψ) .hole) A₂)
 
-/-- Lemma 3.9(→) for variables, `x ∈ y ⇒ x =ⁱ y`, from the `⌈·⌉` scheme. -/
+/-- `x ∈ y ⇒ x =ⁱ y` for variables, from the `⌈·⌉` scheme. -/
 def mem_impl_eqI (n m : EVarIndex) : Γ ⊩ᵢ (.evar n ∈ₘₗ .evar m) ⇒ (.evar n =ⁱₘₗ .evar m) :=
   mem_impl_eqI_of_pred (.assumption (by
     simp only [Pattern.memML, evarLift_ceil, evarLift_conj, evarLift_evar]

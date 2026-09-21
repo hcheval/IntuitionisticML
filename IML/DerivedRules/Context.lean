@@ -3,11 +3,11 @@ import IML.DerivedRules.FOL
 /-!
 # Application contexts: propagation, framing, and the dual box
 
-This file ports Chapter 3 of Chen's thesis (Propositions 3.2–3.4,
-Lemma 3.4, Theorem 3.2) to iML.
+This file ports the standard propagation, framing and dual-box results of
+classical matching logic to iML.
 
 The headline is `ctxBot : C[⊥] ⇒ ⊥`. iML has no PROPAGATION⊥ rule, but the
-classical derivation (credited to Mircea Sebe in the thesis) only uses
+classical derivation, due to Mircea Sebe, only uses
 `⊥ ⇒ ·`, framing, pairing and SINGLETON, all of which are intuitionistic, so
 ⊥-propagation is derivable after all. It is already `Proof.botProp` in
 `IML/Proof.lean`, where it is needed to derive the classical negative
@@ -16,7 +16,7 @@ SINGLETON from the positive one.
 What is *not* derivable is the ¬¬-propagation `C[~~φ] ⇒ ~~C[φ]`; see
 `IML.DerivedRules.DepthOneModel` for the countermodel
 (`IML.DepthOne.nnPropagation_not_derivable`). The modal (K) rule for the dual
-box `~C[~·]` (Theorem 3.2(1)) and `□_C φ ⊓ □_C ψ ⇒ □_C (φ ⊓ ψ)` are refuted
+box `~C[~·]` and `□_C φ ⊓ □_C ψ ⇒ □_C (φ ⊓ ψ)` are refuted
 there as well (`boxK_not_derivable`, `boxAnd_not_derivable`); only (N),
 monotonicity and the converse Barcan formula survive.
 -/
@@ -28,7 +28,7 @@ open Pattern
 variable {Symbol : Type} {Γ : Set (Pattern Symbol)} {φ ψ χ : Pattern Symbol}
 
 -- ─────────────────────────────────────────────────────────────
--- Framing through a context (Proposition 3.2)
+-- Framing through a context
 -- ─────────────────────────────────────────────────────────────
 
 def ctxFraming (C : AppCtx Symbol) (h : Γ ⊩ᵢ φ ⇒ ψ) :
@@ -43,7 +43,7 @@ def ctxFramingEquiv (C : AppCtx Symbol) (h : Γ ⊩ᵢ φ ⟺ ψ) :
   iffIntro (ctxFraming C (iffMpLeft h)) (ctxFraming C (iffMpRight h))
 
 -- ─────────────────────────────────────────────────────────────
--- Propagation of ⊥ (Proposition 3.3(1)) — via SINGLETON
+-- Propagation of ⊥ — via SINGLETON
 -- ─────────────────────────────────────────────────────────────
 
 /-- `C[⊥] ⇒ ⊥` (`Proof.botProp`). The classical derivation
@@ -58,7 +58,7 @@ def ctxBotIff (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill ⊥ₘ ⟺ ⊥ₘ :=
   iffIntro (ctxBot C) (ctxBotR C)
 
 -- ─────────────────────────────────────────────────────────────
--- Propagation of ⊔ (Proposition 3.3(2))
+-- Propagation of ⊔
 -- ─────────────────────────────────────────────────────────────
 
 def ctxPropagationOr (C : AppCtx Symbol) :
@@ -81,7 +81,7 @@ def ctxAnd (C : AppCtx Symbol) : Γ ⊩ᵢ C.fill (φ ⊓ ψ) ⇒ C.fill φ ⊓ 
   implAnd (ctxFraming C andElimLeft) (ctxFraming C andElimRight)
 
 -- ─────────────────────────────────────────────────────────────
--- Lifting contexts and propagation of ∃ (Proposition 3.3(3))
+-- Lifting contexts and propagation of ∃
 -- ─────────────────────────────────────────────────────────────
 
 def AppCtx.liftEVar : AppCtx Symbol → AppCtx Symbol
@@ -114,11 +114,10 @@ def ctxPropagationExistR (C : AppCtx Symbol) :
     exact ctxFraming _ existIntroLift)
 
 -- ─────────────────────────────────────────────────────────────
--- Lemma 3.4: from `φ` infer `~C[~φ]`; the (N) rule of the dual box
+-- From `φ` infer `~C[~φ]`; the (N) rule of the dual box
 -- ─────────────────────────────────────────────────────────────
 
-/-- The dual box `□_C φ := ~C[~φ]` (Theorem 3.2 of the thesis defines
-`σᵈ(φ) := ¬σ(¬φ)`). -/
+/-- The dual box `□_C φ := ~C[~φ]`, the context analogue of `σᵈ(φ) := ¬σ(¬φ)`. -/
 def AppCtx.box (C : AppCtx Symbol) (φ : Pattern Symbol) : Pattern Symbol :=
   ~(C.fill (~φ))
 
